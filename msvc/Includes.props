@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <BoostInclude>D:/lib/obsolete_boost_1_61_0</BoostInclude>
+    <BoostLib>C:/lib\obsolete_boost_1_61_0/build_x64/lib</BoostLib>
+    <CAFLibRelease>C:\lib\actor-framework\build_asio\lib\RelWithDebInfo</CAFLibRelease>
+    <CAFLibDebug>C:\lib\actor-framework\build_asio\lib\Debug</CAFLibDebug>
+    <CAFCoreInclude>C:/lib/actor-framework/libcaf_core</CAFCoreInclude>
+  </PropertyGroup>
+  <ItemGroup>
+    <BuildMacro Include="BoostInclude">
+      <Value>$(BoostInclude)</Value>
+    </BuildMacro>
+    <BuildMacro Include="BoostLib">
+      <Value>$(BoostLib)</Value>
+    </BuildMacro>
+    <BuildMacro Include="CAFLibRelease">
+      <Value>$(CAFLibRelease)</Value>
+    </BuildMacro>
+    <BuildMacro Include="CAFLibDebug">
+      <Value>$(CAFLibDebug)</Value>
+    </BuildMacro>
+    <BuildMacro Include="CAFCoreInclude">
+      <Value>$(CAFCoreInclude)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>
