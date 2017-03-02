@@ -11,9 +11,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="stdafx.h">
       <Filter>includes</Filter>
     </ClInclude>
@@ -23,12 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="BoostUnitTestSample.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="BoostUnitTest.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\tests\CAF_TCP_basic_tests.cpp">

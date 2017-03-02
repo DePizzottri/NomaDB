@@ -185,6 +185,7 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_accept_receive_one)
         const string data = "Data";
         BOOST_CHECK(sync_send_to("localhost", port, data));
 
+        //TODO: add check timeouts
         self->receive(
             [=, &self](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
@@ -239,7 +240,6 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
         const string data = "data";
         ba::write(s, ba::buffer(data));
 
-        //TODO: fix not connected when multiple tests runned as process
         self->receive(
             [=, &self](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
@@ -247,6 +247,7 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
             }
         );
 
+        //TODO: add check timeouts
         self->receive(
             [=, &self](received, buf_type buf, size_t length, CAF_TCP::connection connection) {
                 BOOST_TEST(string(buf.begin(), buf.begin() + length) == data);
