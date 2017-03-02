@@ -266,5 +266,70 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
     system.await_all_actors_done();
 }
 
+BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
+{
+    caf::actor_system_config config{};
+    caf::actor_system system(config);
+
+    auto io = CAF_TCP::start(system, 4);
+
+    {
+        scoped_actor self{ system };
+
+        const uint16_t port = 12347;
+
+        self->request(io, std::chrono::seconds(30), bind_atom::value, port).receive(
+            [=](bound_atom) {
+            BOOST_TEST_CHECKPOINT("bounded");
+        },
+            [=](caf::error err) {
+            BOOST_CHECK(false);
+        }
+        );
+
+        self->send(io, accept_atom::value, actor_cast<actor> (self));
+        BOOST_TEST_CHECKPOINT("accept sended");
+
+        //auto connection_handler = [=](event_based_actor* self) -> behavior {
+        //    return {
+        //        [=](connected, CAF_TCP::connection connection) {
+        //            self->send_exit(self, exit_reason::user_shutdown);
+        //        }
+        //    };
+        //};
+        
+        scoped_actor connh{ system };
+
+        //TODO: fix connect to localhost
+        self->send(io, CAF_TCP::connect_atom::value, "192.168.1.9", port, connh);
+
+        const buf_type data = { 'D', 'a', 't', 'a' };
+
+        self->receive(
+            [=, &self](connected, CAF_TCP::connection connection) {
+            BOOST_TEST_CHECKPOINT("connected");
+            self->send(connection, CAF_TCP::do_read::value);
+        }
+        );
+
+        connh->receive(
+            [=, &connh](connected, CAF_TCP::connection connection) {
+                BOOST_TEST_CHECKPOINT("connected");
+                connh->send(connection, CAF_TCP::do_write::value, data);
+            }
+        );
+
+        self->receive(
+            [=](received, buf_type buf, size_t length, CAF_TCP::connection connection) {
+                BOOST_TEST(buf_type(buf.begin(), buf.begin() + length) == data);
+            }
+        );
+    }
+
+    anon_send(io, CAF_TCP::stop::value);
+    system.await_all_actors_done();
+}
+
+
 //TODO: test exceptional situations (disconnect, canceling, etc)
 //TODO: more test for test god
