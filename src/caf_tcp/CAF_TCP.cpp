@@ -41,11 +41,11 @@ namespace CAF_TCP {
                         anon_send(actor_cast<actor>(sender), received::value, std::move(b), length, s);
                     }
                     else {
-                        //TODO: add error code to response
                         boost::system::error_code ignored_ec;
                         socket->shutdown(tcp::socket::shutdown_receive, ignored_ec);
                         aout(self) << "Read failed: " << ec.message() << std::endl;
                         anon_send(actor_cast<actor> (sender), read_closed::value);
+                        anon_send(actor_cast<actor> (sender), failed::value, do_read::value, ec.value());
                     }
                 });
             },
@@ -60,6 +60,7 @@ namespace CAF_TCP {
                     //TODO: add handling of cancel
                     else {
                         aout(self) << "Write failed: " << ec.message() << std::endl;
+                        anon_send(actor_cast<actor> (sender), failed::value, do_write::value, ec.value());
                     }
                 });
             },
@@ -67,23 +68,28 @@ namespace CAF_TCP {
                 self->state.buffer_hint = size;
             },
             [=](close_write) {
-                boost::system::error_code ignored_ec;
-                //TODO: add error code to response
-                socket->shutdown(tcp::socket::shutdown_send, ignored_ec);
+                boost::system::error_code ec;
+                socket->shutdown(tcp::socket::shutdown_send, ec);
+                if (ec) {
+                    anon_send(actor_cast<actor> (self->current_sender()), failed::value, close_write::value, ec.value());
+                }
             },
             [=](close) {
-                //TODO: add error code to response
-                boost::system::error_code ignored_ec;
-                socket->shutdown(tcp::socket::shutdown_both, ignored_ec);
+                boost::system::error_code ec;
+                socket->shutdown(tcp::socket::shutdown_both, ec);
                 //TODO: add gentle closing
-                //socket->close();
+                if (ec) {
+                    anon_send(actor_cast<actor> (self->current_sender()), failed::value, close::value, ec.value());
+                }
                 self->send_exit(self, caf::exit_reason::normal);
                 return closed::value;
             },
             [=](abort) {
-                //TODO: add error code to response
                 boost::system::error_code ec;
                 socket->close(ec);
+                if (ec) {
+                    anon_send(actor_cast<actor> (self->current_sender()), failed::value, abort::value, ec.value());
+                }
                 return aborted::value;
             }
         };
@@ -125,6 +131,7 @@ namespace CAF_TCP {
                     else if (ec != boost::system::errc::operation_canceled)
                     {
                         aout(self) << "Accept error: " << ec.message() << std::endl;
+                        self->anon_send(handler, failed::value, accept_atom::value, ec.value());
                     }
                     else {
                         return;
@@ -149,21 +156,22 @@ namespace CAF_TCP {
                                 self->anon_send(handler, connected::value, connection);
                             }
                             else {
-                                //TODO: respond with err code
                                 aout(self) << "Connect failed: " << ec.message() << std::endl;
+
+                                self->anon_send(handler, failed::value, connect_atom::value, ec.value());
                             }
                         });
                     }
                     else {
-                        //TODO: respond with err code
                         aout(self) << "Resolve failed: " << ec.message() << std::endl;
+                        self->anon_send(handler, failed::value, connect_atom::value, ec.value());
                     }
                 });
             },
             [=](run_atom) {
                 worker_state::service.reset();
                 worker_state::service.run();
-                //TODO: thin about (graceful) stop pattern
+                //TODO: think about (graceful) stop pattern
                 self->send_exit(self, exit_reason::user_shutdown);
             },
             [=](stop) {

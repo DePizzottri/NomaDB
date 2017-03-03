@@ -91,8 +91,8 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_bind)
         self->request(io, std::chrono::seconds(30), bind_atom::value, uint16_t{ 8082 }).receive(
             [=](bound_atom) {
             },
-            [=](caf::error err) {
-                BOOST_CHECK(false);
+            [=, &self](caf::error err) {
+                BOOST_TEST(false, self->system().render(err));
             }
         );
     }
@@ -163,8 +163,8 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_accept_receive_one)
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
-            [=](caf::error err) {
-                BOOST_CHECK(false);
+            [=, &self](caf::error err) {
+                BOOST_TEST(false, self->system().render(err));
             }
         );
 
@@ -219,8 +219,8 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
-            [=](caf::error err) {
-                BOOST_CHECK(false);
+            [=, &self](caf::error err) {
+                BOOST_TEST(false, self->system().render(err));
             }
         );
 
@@ -281,8 +281,8 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
-            [=](caf::error err) {
-                BOOST_CHECK(false);
+            [=, &self](caf::error err) {
+                BOOST_TEST(false, self->system().render(err));
             }
         );
 

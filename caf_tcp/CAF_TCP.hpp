@@ -4,26 +4,48 @@
 
 //TODO: add timeots fo commands
 //TODO: add backpressure
+
+
+
 namespace CAF_TCP {
     using namespace caf;
     namespace ba = boost::asio;
 
-    //TODO: add TCP config
+    //TODO: deal with bs::error_code
+    //template <class Inspector>
+    //typename std::enable_if_t<
+    //    Inspector::reads_state,
+    //    typename Inspector::result_type
+    //>
+    //inspect(Inspector& f, boost::system::error_code& ec) {
+    //    return f(meta::type_name("baerrorcode"), ec.value(), ec.category());
+    //}
+
+    //template <class Inspector>
+    //typename std::enable_if_t<
+    //    Inspector::writes_state,
+    //    typename Inspector::result_type
+    //>
+    //inspect(Inspector& f, boost::system::error_code& ec) {
+    //        int val;
+    //        boost::system::error_category cat;
+    //        auto g = make_scope_guard([&] {
+    //            ec.assign(val, cat);
+    //        });
+    //    return f(meta::type_name("baerrorcode"), val, cat);
+    //}
+
+
     //struct config : actor_system_config {
     //    config() {
+    //        //add_message_type<boost::system::error_code>("baerrorcode");
     //        opt_group{ custom_options_, "global" }
-    //            .add(port, "port,p", "set port")
-    //            .add(host, "host,H", "set node")
-    //            .add(starter, "starter,s", "set if client node is starter")
-    //            .add(is_cordinator, "coordinator,c", "start as coordinator")
-    //            .add(nodes_to_start, "nodes,n", "number of nodes to start (default 2)");
+    //            .add(port, "port,p", "tcp port")
+    //            .add(host, "host,H", "set node");
     //    }
 
     //    uint16_t port = 0;
-    //    string host = "localhost";
-    //    bool is_cordinator = false;
-    //    bool starter = false;
-    //    uint16_t nodes_to_start = 2;
+    //    std::string host = "localhost";
     //};
 
     using run_atom = atom_constant<atom("run")>;
@@ -56,6 +78,17 @@ namespace CAF_TCP {
     using sended = atom_constant<atom("sended")>;
 
     using buffer_hint = atom_constant<atom("bufhint")>;
+
+    using error = atom_constant<atom("error")>;
+
+    //accept
+    //connect
+    //resolve
+    //read
+    //write
+    //close (read/write)
+    //abort
+    using failed = atom_constant<atom("failed")>;
 
     using buf_type = std::vector<char>;
 
