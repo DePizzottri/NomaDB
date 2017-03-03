@@ -2,6 +2,8 @@
 #include <boost/asio.hpp>
 #include <chrono>
 
+//TODO: add timeots fo commands
+//TODO: add backpressure
 namespace CAF_TCP {
     using namespace caf;
     namespace ba = boost::asio;
@@ -56,6 +58,8 @@ namespace CAF_TCP {
     using buffer_hint = atom_constant<atom("bufhint")>;
 
     using buf_type = std::vector<char>;
+
+    buf_type to_buffer(std::string const& data);
 
     using connection = typed_actor<
         reacts_to<do_read>,

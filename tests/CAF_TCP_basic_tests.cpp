@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(CAF_test_example) {
     system.await_all_actors_done();
 }
 
-BOOST_AUTO_TEST_CASE(CAF_TCP_Creation)
+BOOST_AUTO_TEST_CASE(CAF_TCP_creation)
 {
     caf::actor_system_config config{};
     caf::actor_system system(config);
@@ -77,8 +77,7 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_Creation)
     //BOOST_CHECK_EQUAL(add(2, 2), 4);       // #7 continues on error
 }
 
-
-BOOST_AUTO_TEST_CASE(CAF_TCP_Bind)
+BOOST_AUTO_TEST_CASE(CAF_TCP_bind)
 {
     caf::actor_system_config config{};
     caf::actor_system system(config);
@@ -280,11 +279,11 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
 
         self->request(io, std::chrono::seconds(30), bind_atom::value, port).receive(
             [=](bound_atom) {
-            BOOST_TEST_CHECKPOINT("bounded");
-        },
+                BOOST_TEST_CHECKPOINT("bounded");
+            },
             [=](caf::error err) {
-            BOOST_CHECK(false);
-        }
+                BOOST_CHECK(false);
+            }
         );
 
         self->send(io, accept_atom::value, actor_cast<actor> (self));
@@ -307,9 +306,9 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
 
         self->receive(
             [=, &self](connected, CAF_TCP::connection connection) {
-            BOOST_TEST_CHECKPOINT("connected");
-            self->send(connection, CAF_TCP::do_read::value);
-        }
+                BOOST_TEST_CHECKPOINT("connected");
+                self->send(connection, CAF_TCP::do_read::value);
+            }
         );
 
         connh->receive(
@@ -324,12 +323,18 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
                 BOOST_TEST(buf_type(buf.begin(), buf.begin() + length) == data);
             }
         );
+
+        connh->receive(
+            [=, &connh](sended, size_t length, CAF_TCP::connection connection) {
+                BOOST_TEST(length == data.size());
+                //connh->send(connection, CAF_TCP::do_write::value, data);
+            }
+        );
     }
 
     anon_send(io, CAF_TCP::stop::value);
     system.await_all_actors_done();
 }
 
-
-//TODO: test exceptional situations (disconnect, canceling, etc)
+//TODO: test exceptional situations (failures, disconnect, canceling, etc)
 //TODO: more test for test god
