@@ -81,7 +81,7 @@ namespace CAF_TCP {
                 if (ec) {
                     anon_send(actor_cast<actor> (self->current_sender()), failed::value, close::value, ec.value());
                 }
-                self->send_exit(self, caf::exit_reason::normal);
+                self->quit();
                 return closed::value;
             },
             [=](abort) {
@@ -172,12 +172,12 @@ namespace CAF_TCP {
                 worker_state::service.reset();
                 worker_state::service.run();
                 //TODO: think about (graceful) stop pattern
-                self->send_exit(self, exit_reason::user_shutdown);
+                self->quit();
             },
             [=](stop) {
                 //TODO: commands after stop hangs?
                 self->state.service.stop();
-                self->send_exit(self, exit_reason::user_shutdown);
+                self->quit();
             }
         };
     }

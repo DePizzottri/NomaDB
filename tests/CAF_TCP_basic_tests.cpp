@@ -42,6 +42,11 @@ BOOST_AUTO_TEST_CASE(CAF_test_example) {
     system.await_all_actors_done();
 }
 
+using namespace chrono;
+using namespace chrono_literals;
+
+static constexpr auto timeout = 100ms;
+
 BOOST_AUTO_TEST_CASE(CAF_TCP_creation)
 {
     caf::actor_system_config config{};
@@ -84,15 +89,16 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_bind)
 
     auto io = CAF_TCP::start(system, 4);
 
-    anon_send(io, CAF_TCP::stop::value);
-
     {
         scoped_actor self{ system };
-        self->request(io, std::chrono::seconds(30), bind_atom::value, uint16_t{ 8082 }).receive(
+
+        self->send(io, bind_atom::value, uint16_t{ 12349 });
+            
+        self->receive(
             [=](bound_atom) {
             },
-            [=, &self](caf::error err) {
-                BOOST_TEST(false, self->system().render(err));
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("bind timeout");
             }
         );
     }
@@ -123,6 +129,8 @@ bool sync_send_to(std::string const& host, uint16_t port, std::string const& dat
         return false;
     }
 }
+
+#include <chrono>
 
 BOOST_AUTO_TEST_CASE(CAF_TCP_accept_receive_one)
 {
@@ -159,12 +167,12 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_accept_receive_one)
 
         const uint16_t port = 12345;
 
-        self->request(io, std::chrono::seconds(30), bind_atom::value, port).receive(
+        self->request(io, timeout, bind_atom::value, port).receive(
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
             [=, &self](caf::error err) {
-                BOOST_TEST(false, self->system().render(err));
+                BOOST_TEST_FAIL(self->system().render(err));
             }
         );
 
@@ -184,17 +192,22 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_accept_receive_one)
         const string data = "Data";
         BOOST_CHECK(sync_send_to("localhost", port, data));
 
-        //TODO: add check timeouts
         self->receive(
             [=, &self](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
                 self->send(connection, CAF_TCP::do_read::value);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("receive timeout");
             }
         );
 
         self->receive(
             [=](received, buf_type buf, size_t length, CAF_TCP::connection connection) {
                 BOOST_CHECK(string(buf.begin(), buf.begin() + length) == data);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("receive timeout");
             }
         );
     }
@@ -215,12 +228,12 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
 
         const uint16_t port = 12346;
 
-        self->request(io, std::chrono::seconds(30), bind_atom::value, port).receive(
+        self->request(io, timeout, bind_atom::value, port).receive(
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
             [=, &self](caf::error err) {
-                BOOST_TEST(false, self->system().render(err));
+                BOOST_TEST_FAIL(self->system().render(err));
             }
         );
 
@@ -243,14 +256,19 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
             [=, &self](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
                 self->send(connection, CAF_TCP::do_read::value);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'connected' receive timeout");
             }
         );
 
-        //TODO: add check timeouts
         self->receive(
             [=, &self](received, buf_type buf, size_t length, CAF_TCP::connection connection) {
                 BOOST_TEST(string(buf.begin(), buf.begin() + length) == data);
                 self->send(connection, CAF_TCP::do_read::value);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'received' receive timeout");
             }
         );
         
@@ -277,12 +295,12 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
 
         const uint16_t port = 12347;
 
-        self->request(io, std::chrono::seconds(30), bind_atom::value, port).receive(
+        self->request(io, timeout, bind_atom::value, port).receive(
             [=](bound_atom) {
                 BOOST_TEST_CHECKPOINT("bounded");
             },
             [=, &self](caf::error err) {
-                BOOST_TEST(false, self->system().render(err));
+                BOOST_TEST_FAIL(self->system().render(err));
             }
         );
 
@@ -308,6 +326,9 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
             [=, &self](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
                 self->send(connection, CAF_TCP::do_read::value);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'connected' receive timeout");
             }
         );
 
@@ -315,12 +336,18 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
             [=, &connh](connected, CAF_TCP::connection connection) {
                 BOOST_TEST_CHECKPOINT("connected");
                 connh->send(connection, CAF_TCP::do_write::value, data);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'connected' receive timeout");
             }
         );
 
         self->receive(
             [=](received, buf_type buf, size_t length, CAF_TCP::connection connection) {
                 BOOST_TEST(buf_type(buf.begin(), buf.begin() + length) == data);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'received' receive timeout");
             }
         );
 
@@ -328,6 +355,9 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
             [=, &connh](sended, size_t length, CAF_TCP::connection connection) {
                 BOOST_TEST(length == data.size());
                 //connh->send(connection, CAF_TCP::do_write::value, data);
+            },
+            after(timeout) >> [=] {
+                BOOST_TEST_FAIL("'sended' receive timeout");
             }
         );
     }
@@ -336,5 +366,5 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
     system.await_all_actors_done();
 }
 
-//TODO: test exceptional situations (failures, disconnect, canceling, etc)
+//TODO: test exceptional situations (failures, disconnect, canceling, timeouts, etc)
 //TODO: more test for test god
