@@ -194,6 +194,7 @@ namespace CAF_TCP {
                 });
             },
             [=](stop) {
+                //TODO: fix time wait connections
                 //TODO: commands after stop hangs?
                 self->state.service->stop();
                 self->quit();

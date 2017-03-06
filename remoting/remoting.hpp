@@ -2,7 +2,8 @@
 
 #include <caf/all.hpp>
 
-#include "CAF_TCP.hpp"
+#include <CAF_TCP.hpp>
+#include <protocol.hpp>
 
 namespace remoting {
 
@@ -12,6 +13,7 @@ namespace remoting {
     using discover_atom = atom_constant<atom("discover")>;
     using discovered_atom = atom_constant<atom("discovered")>;
     using add_new_connection = atom_constant<atom("adnconn")>;
+    using proxy_peer_id = atom_constant<atom("prxypid")>;
 
     struct address {
         std::string host;
@@ -30,6 +32,19 @@ namespace remoting {
         address in_address;
     };
 
+    struct envelope {
+        actor_id id;
+        caf::message msg;
+        expected<protocol::message> to_message(protocol::action act, actor_system& system);
+
+        static expected<envelope> from_message(protocol::message const& msg, actor_system& system);
+    };
+
+    template <class Inspector>
+    auto inspect(Inspector& f, envelope& x) {
+        return f(meta::type_name("envelope"), x.id, x.msg);
+    }
+
     template <class Inspector>
     auto inspect(Inspector& f, address& x) {
         return f(meta::type_name("address"), x.host, x.port);
@@ -42,101 +57,46 @@ namespace remoting {
 
     using remoting = typed_actor<
         reacts_to<discover_atom, string, node_name, address>,
-        reacts_to<add_new_connection, node_name, CAF_TCP::connection>
+        //TODO: hide private interface
+        reacts_to<add_new_connection, node_name, CAF_TCP::connection>,
+        reacts_to<CAF_TCP::bound_atom>
     >;
 
     //TODO: maybe only typed actors?
-    behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_proxy_id, actor_name const& remote_name, node_name const& node) {
-        self->link_to(conn); //TODO: test down cases
+    behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_proxy_id, bool handshake/*, actor_name const& remote_name, node_name const& node*/);
 
-        return {
-            //TODO: forward messages to
-            //TODO: receive messages from
-            //TODO: handle down/exit
-        };
-    }
+    behavior half_proxy(event_based_actor* self, CAF_TCP::connection conn, actor discoverer);
 
     struct multiplexer_state {
         unordered_map<actor_id, actor> proxy_map;
+        protocol::message              msg;
+        parser                         parser;
     };
 
-    behavior income_messages_multiplexer(event_based_actor* self, CAF_TCP::connection connection) {
-        self->send(connection, CAF_TCP::do_read::value);
-        return {
-            [=](CAF_TCP::buf_type buf, size_t length, CAF_TCP::connection connection) {
-                //parse message
-                //send to
-            }
-        };
-    }
+    behavior income_messages_multiplexer(stateful_actor<multiplexer_state>* self, CAF_TCP::connection connection);
+
+    behavior new_connection_acceptor(event_based_actor* self, actor rem);
 
     struct remoting_state {
         unordered_map<node_name, CAF_TCP::connection> nodes;
     };
 
     //TODO: GATHER PATTERN
-    behavior discoverer(event_based_actor* self, CAF_TCP::connection connection, node_name const& node, actor_name const& who, actor answer_to) {
-        //send discover message
-        //TODO: remoting protocol
-        self->send(connection, CAF_TCP::do_write::value, CAF_TCP::to_buffer("discover "s + who));
-        return {
-            [=](CAF_TCP::received, CAF_TCP::buf_type buf, size_t length, CAF_TCP::connection connection) { //proxy handshake
-                //parse and get remote id
-
-                //create proxy
-
-                //send local proxy id to remote proxy
-
-                self->send(answer_to, discovered_atom::value, node, who/*, proxy*/);
-            },
-            [=](CAF_TCP::sended, size_t length, CAF_TCP::connection) {
-                //check 
-
-                //OK, sended
-
-                //close self
-                self->send_exit(self, exit_reason::user_shutdown);
-            }
-            //TODO: handle errors!
-        };
-    }
+    behavior discoverer(event_based_actor* self, CAF_TCP::connection connection, node_name const& node, actor_name const& who, actor answer_to);
 
     //TODO: GATHER PATTERN
-    behavior connection_establisher(event_based_actor* self, CAF_TCP::worker tcp_actor, node_name const& node, address const& addr, actor_name const& who, remoting const& rem, actor answer_to) {
-        self->send(tcp_actor, CAF_TCP::connect_atom::value, addr.host, addr.port, self);
-        return {
-            [=](CAF_TCP::connected, CAF_TCP::connection connection) {
-                self->become(discoverer(self, connection, node, who, answer_to));
-                //send message to remoting to add new name <-> connection 
-                self->send(rem, add_new_connection::value, node, connection);
-            }
-            //TODO: handle errors!
-        };
-    }
+    behavior connection_establisher(event_based_actor* self,
+        CAF_TCP::worker tcp_actor,
+        node_name const& self_name,
+        node_name const& node,
+        address const& addr,
+        actor_name const& who,
+        remoting const& rem,
+        actor answer_to);
+    
 
-    remoting::behavior_type make_remoting(remoting::stateful_pointer<remoting_state> self, CAF_TCP::worker tcp_actor) {
-        return {
-            //TODO: extract to find only reaction
-            [=](discover_atom, actor_name const& actor_name, node_name const& node, address const& addr) {
-                //find_or_create connection
-                auto iconn = self->state.nodes.find(node);
+    remoting::behavior_type make_remoting(remoting::stateful_pointer<remoting_state> self, CAF_TCP::worker tcp_actor, uint16_t port, node_name const& self_name);
 
-                if (iconn == self->state.nodes.end()) {
-                    //run connection and discover
-                    self->spawn(connection_establisher, tcp_actor, node, addr, actor_name, self, actor_cast<actor> (self->current_sender()));
-                }
-                else {
-                    //run discover
-                    self->spawn(discoverer, iconn->second, node, actor_name, actor_cast<actor> (self->current_sender()));
-                }
-            },
-            [=](add_new_connection, node_name const& name, CAF_TCP::connection connection) {
-                self->state.nodes.insert({name, connection});
-            }
-        };
-    }
-
-    //remoting start_remoting(actor_system const& system, actor const& tcp_actor) {
-    //    return system.spawn(make_remoting, tcp_actor);
-    //}
-}
+    //TODO: stop remoting
+    remoting start_remoting(actor_system & system, CAF_TCP::worker tcp_actor, uint16_t port, node_name const& name);
+};//

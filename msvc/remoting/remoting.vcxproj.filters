@@ -19,5 +19,8 @@
     <ClInclude Include="..\..\remoting\remoting.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\remoting\protocol.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
