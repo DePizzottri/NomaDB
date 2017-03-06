@@ -1,3 +1,5 @@
+#pragma once
+
 #include <caf/all.hpp>
 #include <boost/asio.hpp>
 #include <chrono>
@@ -93,6 +95,8 @@ namespace CAF_TCP {
     using buf_type = std::vector<char>;
 
     buf_type to_buffer(std::string const& data);
+    
+    std::string to_string(buf_type const& data);
 
     using connection = typed_actor<
         reacts_to<do_read>,
@@ -105,7 +109,6 @@ namespace CAF_TCP {
     >;
 
     using worker = typed_actor<
-        reacts_to<run_atom>,
         reacts_to<stop>,
         replies_to<bind_atom, uint16_t>::with<bound_atom>,
         //TODO: add resposes

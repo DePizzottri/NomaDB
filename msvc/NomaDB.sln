@@ -8,11 +8,18 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{7C887F6D-0350-459F-A308-DBDB4924B760}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B4B33989-674C-4C9B-BC18-055A9BBC34A6} = {B4B33989-674C-4C9B-BC18-055A9BBC34A6}
+		{338E17AD-6377-44CF-B65B-2BE3736845EA} = {338E17AD-6377-44CF-B65B-2BE3736845EA}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "remoting", "remoting\remoting.vcxproj", "{338E17AD-6377-44CF-B65B-2BE3736845EA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B4B33989-674C-4C9B-BC18-055A9BBC34A6} = {B4B33989-674C-4C9B-BC18-055A9BBC34A6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http_example", "http_example\http_example.vcxproj", "{8871CF87-FF55-4BC5-9399-263D6C105405}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B4B33989-674C-4C9B-BC18-055A9BBC34A6} = {B4B33989-674C-4C9B-BC18-055A9BBC34A6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

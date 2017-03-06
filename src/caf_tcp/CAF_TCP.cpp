@@ -20,6 +20,10 @@ namespace CAF_TCP {
         return buf_type(data.begin(), data.end());
     }
 
+    std::string to_string(buf_type const& data) {
+        return std::string(data.begin(), data.end());
+    }
+
     connection::behavior_type make_connection(connection::stateful_pointer<connection_state> self, std::shared_ptr<tcp::socket> socket) {
         return {
             [=](do_read) {
@@ -95,33 +99,54 @@ namespace CAF_TCP {
         };
     }
 
-    //TODO: divide blocking io workers and non-blocking io interfaces
-    //TODO: make multiple TCP IO in one process/actor system be possible
     struct worker_state {
-        static ba::io_service          service;
-        static ba::io_service::work    work;
+        std::shared_ptr<ba::io_service> service;
+        std::shared_ptr<ba::io_service::work> work;
         std::shared_ptr<tcp::acceptor> acceptor;
-        tcp::resolver                  resolver;
-        worker_state() :
-            resolver(service)
+        std::shared_ptr<tcp::resolver> resolver;
+        worker_state()
         {}
     };
 
-    ba::io_service worker_state::service{};
+    using background_worker = typed_actor<
+        reacts_to<run_atom>
+    >;
 
-    ba::io_service::work work{ worker_state::service };
+    struct background_worker_state {
+        std::shared_ptr<ba::io_service> service;
+        std::shared_ptr<ba::io_service::work> work;
+        background_worker_state()
+        {}
+    };
 
-    worker::behavior_type make_worker(worker::stateful_pointer<worker_state> self) {
+    background_worker::behavior_type make_background_worker(background_worker::stateful_pointer<background_worker_state> self, std::shared_ptr<ba::io_service> service) {
+        self->state.service = service;
+        self->state.work = std::make_shared<ba::io_service::work>(*service);
+
+        return {
+            [=](run_atom) {
+                self->state.service->reset();
+                self->state.service->run();
+                //TODO: think about (graceful) stop pattern
+                self->quit();
+            }
+        };
+    }
+
+    worker::behavior_type make_worker(worker::stateful_pointer<worker_state> self, std::shared_ptr<ba::io_service> service) {
+        self->state.service = service;
+        self->state.work = std::make_shared<ba::io_service::work>(*service);
+        self->state.resolver = std::make_shared<tcp::resolver>(*service);
         return{
             //TODO: add bind on address
             [=](bind_atom, uint16_t port) {
-                self->state.acceptor = std::make_shared<tcp::acceptor>(worker_state::service, tcp::endpoint(tcp::v4(), port));
+                self->state.acceptor = std::make_shared<tcp::acceptor>(*self->state.service, tcp::endpoint(tcp::v4(), port));
                 return bound_atom::value;
             },
             [=](accept_atom, actor handler) {
                 auto acceptor = self->state.acceptor;
 
-                auto socket = std::make_shared<tcp::socket>(worker_state::service);
+                auto socket = std::make_shared<tcp::socket>(*self->state.service);
                 acceptor->async_accept(*socket, [self, handler, socket](boost::system::error_code const& ec) {
                     if (!ec) {
                         auto connection = self->system().spawn(make_connection, socket);
@@ -144,10 +169,10 @@ namespace CAF_TCP {
             [=](connect_atom, std::string const& addr, uint16_t port, actor handler) {
                 tcp::resolver::query rquery(addr, std::to_string(port));
 
-                self->state.resolver.async_resolve(rquery,
+                self->state.resolver->async_resolve(rquery,
                     [=](boost::system::error_code const& ec, tcp::resolver::iterator endpoint_iterator) {
                     if (!ec) {
-                        auto socket = std::make_shared<tcp::socket>(worker_state::service);
+                        auto socket = std::make_shared<tcp::socket>(*self->state.service);
 
                         socket->async_connect(*endpoint_iterator, [=](boost::system::error_code const& ec) {
                             if (!ec) {
@@ -168,15 +193,9 @@ namespace CAF_TCP {
                     }
                 });
             },
-            [=](run_atom) {
-                worker_state::service.reset();
-                worker_state::service.run();
-                //TODO: think about (graceful) stop pattern
-                self->quit();
-            },
             [=](stop) {
                 //TODO: commands after stop hangs?
-                self->state.service.stop();
+                self->state.service->stop();
                 self->quit();
             }
         };
@@ -185,11 +204,13 @@ namespace CAF_TCP {
     worker start(actor_system& system, int workers_num) {
         scoped_actor self{ system };
 
+        auto service = std::make_shared<ba::io_service>();
+
         for (int i = 0; i < workers_num; ++i) {
-            auto ioworker = system.spawn<detached>(make_worker);
+            auto ioworker = system.spawn<detached>(make_background_worker, service);
             self->send(ioworker, run_atom::value);
         }
 
-        return system.spawn(make_worker);
+        return system.spawn(make_worker, service);
     }
 }
