@@ -24,6 +24,10 @@ namespace CAF_TCP {
         return std::string(data.begin(), data.end());
     }
 
+    std::string to_string(buf_type const& data, std::size_t length) {
+        return std::string(data.begin(), data.begin() + length);
+    }
+
     connection::behavior_type make_connection(connection::stateful_pointer<connection_state> self, std::shared_ptr<tcp::socket> socket) {
         return {
             [=](do_read) {
@@ -31,12 +35,11 @@ namespace CAF_TCP {
                 auto buf = std::make_shared<buf_type>(self->state.buffer_hint);
                 auto sender = self->current_sender();
                 auto b = ba::buffer(*buf);
-                socket->async_read_some(b,[=, b = std::move(b), s = actor_cast<connection>(self)](boost::system::error_code ec, std::size_t length) mutable {
+                socket->async_read_some(b, [=, b = std::move(b), s = actor_cast<connection>(self)](boost::system::error_code ec, std::size_t length) mutable {
                     if (ec == ba::error::eof) {
                         boost::system::error_code ignored_ec;
                         socket->shutdown(tcp::socket::shutdown_receive, ignored_ec);
                         anon_send(actor_cast<actor> (sender), read_closed::value);
-                        //self->send_exit(self, caf::exit_reason::normal);
                     }
                     else if (!ec) {
                         auto b = std::move(*buf);
@@ -56,7 +59,7 @@ namespace CAF_TCP {
             [=](do_write, buf_type buf) {
                 auto sender = self->current_sender();
                 auto b = ba::buffer(buf);
-                ba::async_write(*socket, b,[=, b = std::move(b), s = actor_cast<connection>(self)](boost::system::error_code ec, std::size_t length) {
+                ba::async_write(*socket, b, [=, b = std::move(b), s = actor_cast<connection>(self)](boost::system::error_code ec, std::size_t length) {
                     if (!ec) {
                         //self->send(actor_cast<actor>(sender), sended::value, length, s);
                         anon_send(actor_cast<actor>(sender), sended::value, length, s);
@@ -149,7 +152,7 @@ namespace CAF_TCP {
                 auto socket = std::make_shared<tcp::socket>(*self->state.service);
                 acceptor->async_accept(*socket, [self, handler, socket](boost::system::error_code const& ec) {
                     if (!ec) {
-                        auto connection = self->system().spawn(make_connection, socket);
+                        auto connection = self->system().spawn(make_connection, std::move(socket));
 
                         self->anon_send(handler, connected::value, connection);
                     }

@@ -98,6 +98,8 @@ namespace CAF_TCP {
     
     std::string to_string(buf_type const& data);
 
+    std::string to_string(buf_type const& data, std::size_t length);
+
     using connection = typed_actor<
         reacts_to<do_read>,
         //reacts_to<do_read, buf_type>,

@@ -366,5 +366,5 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
     system.await_all_actors_done();
 }
 
-//TODO: test exceptional situations (failures, disconnect, canceling, timeouts, etc)
-//TODO: more test for test god
+////TODO: test exceptional situations (failures, disconnect, canceling, timeouts, etc)
+////TODO: more test for test god
