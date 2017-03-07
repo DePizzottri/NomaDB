@@ -12,8 +12,9 @@ namespace remoting {
 
     using discover_atom = atom_constant<atom("discover")>;
     using discovered_atom = atom_constant<atom("discovered")>;
+    using discover_failed_atom = atom_constant<atom("discoverf")>;
+
     using add_new_connection = atom_constant<atom("adnconn")>;
-    using proxy_peer_id = atom_constant<atom("prxypid")>;
 
     struct address {
         std::string host;
@@ -33,7 +34,7 @@ namespace remoting {
     };
 
     struct envelope {
-        actor_id id;
+        actor_id     id;
         caf::message msg;
         expected<protocol::message> to_message(protocol::action act, actor_system& system);
 
@@ -62,20 +63,20 @@ namespace remoting {
         reacts_to<CAF_TCP::bound_atom>
     >;
 
-    //TODO: maybe only typed actors?
-    behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_proxy_id, bool handshake/*, actor_name const& remote_name, node_name const& node*/);
+    ////TODO: maybe only typed actors?
+    //behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_proxy_id, bool handshake/*, actor_name const& remote_name, node_name const& node*/);
 
-    behavior half_proxy(event_based_actor* self, CAF_TCP::connection conn, actor discoverer);
+    //behavior half_proxy(event_based_actor* self, CAF_TCP::connection conn, actor discoverer);
 
     struct multiplexer_state {
-        unordered_map<actor_id, actor> proxy_map;
+        unordered_map<actor_id, actor> mediator_map;
         protocol::message              msg;
         parser                         parser;
     };
 
-    behavior income_messages_multiplexer(stateful_actor<multiplexer_state>* self, CAF_TCP::connection connection);
+    //behavior income_messages_multiplexer(stateful_actor<multiplexer_state>* self, CAF_TCP::connection connection);
 
-    behavior new_connection_acceptor(event_based_actor* self, actor rem);
+    //behavior new_connection_acceptor(event_based_actor* self, actor rem);
 
     struct remoting_state {
         unordered_map<node_name, CAF_TCP::connection> nodes;

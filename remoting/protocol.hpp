@@ -15,7 +15,8 @@ namespace remoting {
         enum action: uint16_t {
             discover, //proxy_id
             discovered, //envelope(local_proxy, remote_proxy)
-            message_to //envelope
+            message_to, //envelope
+            handshake //node name
             //down //envelope(id)
         };
 
@@ -23,6 +24,21 @@ namespace remoting {
             action      action;
             uint16_t    size;
             std::string body;
+
+            CAF_TCP::buf_type to_buffer() {
+                CAF_TCP::buf_type ret;
+
+                ret.push_back(char(action & 0xFF));
+                ret.push_back(char((action & 0xFF) >> 8));
+
+                ret.push_back(char(size & 0xFF));
+                ret.push_back(char((size & 0xFF) >> 8));
+
+                for (const auto& b : body)
+                    ret.push_back(b);
+
+                return ret;
+            }
         };
 
         //template <class Inspector>
@@ -52,6 +68,8 @@ namespace remoting {
 
         void reset() {
             ptr = 0;
+            act_buf = 0;
+            state = state::action;
         }
 
         parse_result parse(protocol::message& msg, iterator begin, iterator end) {
@@ -72,20 +90,21 @@ namespace remoting {
                 case(state::action): {
                     act_buf |= uint16_t(in) << (ptr * sizeof(char));
                     ptr++;
-                    if (ptr > sizeof(msg.action)) {
+                    if (ptr == sizeof(msg.action)) {
                         msg.action = static_cast<protocol::action> (act_buf);
-                        switch (msg.action) {
-                            case(protocol::action::discover): {
-                                state = state::discover;
-                            }
-                            case(protocol::message_to): {
-                                state = state::body_size;
-                            }
-                            default: {
-                                return result_state::fail;
-                            }
-                        }
-                        //state = state::body_size;
+                        //switch (msg.action) {
+                            //case(protocol::action::discover): {
+                            state = state::body_size;
+                            //    break;
+                            //}
+                            //case(protocol::message_to): {
+                            //    state = state::body_size;
+                            //    break;
+                            //}
+                            //default: {
+                            //    return result_state::fail;
+                            //}
+                        //}
                     }
 
                     return result_state::need_more;
@@ -93,7 +112,7 @@ namespace remoting {
                 case(state::body_size): {
                     msg.size |= uint16_t(in) << ((ptr - sizeof(msg.action)) * sizeof(char));
                     ptr++;
-                    if (ptr > sizeof(msg.action) + sizeof(msg.size)) {
+                    if (ptr == sizeof(msg.action) + sizeof(msg.size)) {
                         ptr = msg.size;
                         state = state::body;
                     }
@@ -114,9 +133,7 @@ namespace remoting {
         }
 
         enum class state {
-            action, body_size, body,
-            discover,
-            message_to
+            action, body_size, body
         };
 
         state    state;
