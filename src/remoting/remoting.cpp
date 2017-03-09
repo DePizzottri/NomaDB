@@ -84,6 +84,12 @@ namespace remoting {
             self->quit(dmsg.reason);
         });
 
+        self->set_default_handler([=](scheduled_actor* from, message_view& msg) -> result<message> {
+            //aout(self) << "Mediator default from id " << from->id() << " to id " << self->id() << endl;
+            anon_send(local_actor, msg.move_content_to_message());
+            return caf::sec::unexpected_message;
+        });
+
         auto forward_to_remote_proxy = [=](message const& msg) {
             auto ee = envelope{ remote_proxy_id, msg }.to_message(protocol::message_to, self->system());
 
@@ -108,9 +114,6 @@ namespace remoting {
         return {
             [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
                 //OK
-            },
-            [=](message const& msg) { //anonimously forward message from remote proxy to local actor
-                anon_send(local_actor, msg);
             }
             //TODO: handle down/exit
             //TODO: handle errors
@@ -124,6 +127,19 @@ namespace remoting {
 
         self->set_down_handler([=](down_msg& dmsg) {
             self->quit(dmsg.reason);
+        });
+
+        self->set_default_handler([=](scheduled_actor* from, message_view& msg) -> result<message> {
+            auto envp = envelope{ remote_mediator_id, msg.move_content_to_message() }.to_message(protocol::message_to, self->system());
+
+            if (!envp) {
+                aout(self) << "Failed to envelope message to remote actor " << self->system().render(envp.cerror()) << endl;
+                return caf::sec::unexpected_message;
+            }
+
+            self->send(conn, CAF_TCP::do_write::value, envp->to_buffer());
+            //aout(self) << "Proxy default from id " << from->id() << " to id " << self->id() << endl;
+            return caf::sec::unexpected_message;
         });
 
         auto forward_to_remote_proxy = [=](message const& msg) {
@@ -140,17 +156,8 @@ namespace remoting {
         return {
             [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
                 //OK
-            },
-            [=](message const& msg) { //forward message to remote mediator
-                auto envp = envelope{ remote_mediator_id, msg }.to_message(protocol::message_to, self->system());
-
-                if (!envp) {
-                    aout(self) << "Failed to envelope message to remote actor " << self->system().render(envp.cerror()) << endl;
-                    return;
-                }
-
-                self->send(conn, CAF_TCP::do_write::value, envp->to_buffer());
             }
+
             //TODO: handle down/exit
             //TODO: handle errors
         };
@@ -221,6 +228,8 @@ namespace remoting {
                                     aout(self) << "Failed to deserialize message to message " << self->system().render(e.cerror()) << endl;
                                     continue;
                                 }
+
+                                //aout(self) << "Mediator received message " << e->msg << endl;
 
                                 //forward message to mediator actor
 
@@ -369,7 +378,7 @@ namespace remoting {
                 }
             },
             [=](add_new_connection, node_name const& name, CAF_TCP::connection connection) {
-                aout(self) << "Node " << self_name << " connected to " << name <<endl;
+                //aout(self) << "Node " << self_name << " connected to " << name <<endl;
                 self->state.nodes.insert({ name, connection });
             },
             [=](CAF_TCP::bound_atom) {
