@@ -70,7 +70,7 @@ behavior simple_server(event_based_actor* self, CAF_TCP::worker worker) {
         [=](closed) {
             //aout(self) << "closed" << std::endl;
         },
-        [=](read_closed) {
+        [=](read_closed, CAF_TCP::connection conn) {
             //aout(self) << "read closed" << std::endl;
         },
         [=](caf::tick_atom) {

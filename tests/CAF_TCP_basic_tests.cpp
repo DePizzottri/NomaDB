@@ -8,6 +8,12 @@ using namespace caf;
 using namespace CAF_TCP;
 using namespace std;
 
+using namespace chrono;
+using namespace chrono_literals;
+
+static constexpr auto timeout = 100ms;
+
+
 behavior test(event_based_actor* self) {
     return {
         [=](std::string msg) {
@@ -41,11 +47,6 @@ BOOST_AUTO_TEST_CASE(CAF_test_example) {
 
     system.await_all_actors_done();
 }
-
-using namespace chrono;
-using namespace chrono_literals;
-
-static constexpr auto timeout = 100ms;
 
 BOOST_AUTO_TEST_CASE(CAF_TCP_creation)
 {
@@ -274,8 +275,11 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_gently_disconnect)
         
         s.shutdown(tcp::socket::shutdown_send);
 
-        self->receive([=] (read_closed){
+        self->receive([=] (read_closed, CAF_TCP::connection){
             BOOST_TEST_CHECKPOINT("read closed");
+        },
+        after(timeout) >> [=] {
+            BOOST_TEST_ERROR("'read_closed' receive timeout");
         });
     }
 
@@ -307,14 +311,6 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
         self->send(io, accept_atom::value, actor_cast<actor> (self));
         BOOST_TEST_CHECKPOINT("accept sended");
 
-        //auto connection_handler = [=](event_based_actor* self) -> behavior {
-        //    return {
-        //        [=](connected, CAF_TCP::connection connection) {
-        //            self->send_exit(self, exit_reason::user_shutdown);
-        //        }
-        //    };
-        //};
-        
         scoped_actor connh{ system };
 
         //TODO: fix connect to localhost
@@ -363,6 +359,106 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
     }
 
     anon_send(io, CAF_TCP::stop::value);
+    system.await_all_actors_done();
+}
+
+BOOST_AUTO_TEST_CASE(CAF_TCP_stop_while_reading)
+{
+    caf::actor_system_config config{};
+    caf::actor_system system(config);
+
+    auto long_timeout = 5s; //long timeout to eliminate spurious fail
+
+    auto io = CAF_TCP::start(system, 1);
+
+    {
+        scoped_actor acch{ system };
+
+        const uint16_t port = 12347;
+
+        scoped_actor connh{ system };
+        //TODO: fix connect to localhost
+        connh->send(io, CAF_TCP::connect_atom::value, "192.168.1.9", port, connh);
+
+        //start listening on port
+        acch->request(io, long_timeout, bind_atom::value, port).receive(
+            [=](bound_atom) {
+                BOOST_TEST_CHECKPOINT("bounded");
+            },
+            [=, &acch](caf::error err) {
+                BOOST_TEST_FAIL(acch->system().render(err));
+            }
+        );
+
+        acch->send(io, accept_atom::value, actor_cast<actor> (acch));
+        BOOST_TEST_CHECKPOINT("accept sended");
+
+        acch->receive(
+            [=, &acch](connected, CAF_TCP::connection connection) {
+            BOOST_TEST_CHECKPOINT("connected");
+                acch->send(connection, CAF_TCP::do_read::value);
+            },
+            after(long_timeout) >> [=] {
+                BOOST_TEST_FAIL("'connected' receive timeout on acc size");
+            }
+        );
+
+        //conn starts read and immediatly close socket
+        connh->receive(
+            [=, &connh](connected, CAF_TCP::connection connection) {
+                BOOST_TEST_CHECKPOINT("connected");
+                connh->send(connection, CAF_TCP::do_read::value);
+                connh->send(connection, CAF_TCP::close::value);
+            },
+            after(long_timeout) >> [=] {
+                BOOST_TEST_FAIL("'connected' receive timeout");
+            }
+        );
+
+        //conn then receive cancelled read fail
+        connh->receive(
+            [=, &connh](CAF_TCP::failed, CAF_TCP::do_read, int code) {
+                BOOST_TEST(code == 995);
+            },
+            after(long_timeout) >> [=] { //TODO: may spuriously fail
+                BOOST_TEST_ERROR("'read canceled' receive timeout on conn side");
+            }
+        );
+
+        //... and read closed
+        connh->receive(
+            [=, &connh](CAF_TCP::read_closed, CAF_TCP::connection conn) {
+                BOOST_TEST_CHECKPOINT("conn read closed");
+            },
+            after(long_timeout) >> [=] { //TODO: may spuriously fail
+                BOOST_TEST_ERROR("'read closed' receive timeout on conn side");
+            }
+        );
+
+        //acc receive read closen and send close socket
+        acch->receive(
+            [=, &acch](CAF_TCP::read_closed, CAF_TCP::connection conn) {
+                BOOST_TEST_CHECKPOINT("Read closed");
+                acch->send(conn, CAF_TCP::close::value);
+            },
+            after(long_timeout) >> [=] { //TODO: may spuriously fail
+                BOOST_TEST_ERROR("'read closed' receive timeout on acc side");
+            }
+        );
+
+        //acc receive socket close
+        acch->receive(
+            [=, &acch](CAF_TCP::closed) {
+                BOOST_TEST_CHECKPOINT("Read closed");
+            },
+            after(long_timeout) >> [=] {
+                BOOST_TEST_ERROR("'closed' receive timeout on acc side");
+            }
+        );
+
+        anon_send(io, CAF_TCP::stop::value);
+    }
+
     system.await_all_actors_done();
 }
 

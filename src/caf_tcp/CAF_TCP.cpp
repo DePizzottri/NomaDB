@@ -28,6 +28,7 @@ namespace CAF_TCP {
         return std::string(data.begin(), data.begin() + length);
     }
 
+    //TODO: DANGER user must be shure that all connections are exited when close TCP actor
     connection::behavior_type make_connection(connection::stateful_pointer<connection_state> self, std::shared_ptr<tcp::socket> socket) {
         return {
             [=](do_read) {
@@ -39,7 +40,7 @@ namespace CAF_TCP {
                     if (ec == ba::error::eof) {
                         boost::system::error_code ignored_ec;
                         socket->shutdown(tcp::socket::shutdown_receive, ignored_ec);
-                        anon_send(actor_cast<actor> (sender), read_closed::value);
+                        anon_send(actor_cast<actor> (sender), read_closed::value, s);
                     }
                     else if (!ec) {
                         auto b = std::move(*buf);
@@ -51,7 +52,7 @@ namespace CAF_TCP {
                         boost::system::error_code ignored_ec;
                         socket->shutdown(tcp::socket::shutdown_receive, ignored_ec);
                         aout(self) << "Read failed: " << ec.message() << std::endl;
-                        anon_send(actor_cast<actor> (sender), read_closed::value);
+                        anon_send(actor_cast<actor> (sender), read_closed::value, s);
                         anon_send(actor_cast<actor> (sender), failed::value, do_read::value, ec.value());
                     }
                 });
@@ -88,6 +89,7 @@ namespace CAF_TCP {
                 if (ec) {
                     anon_send(actor_cast<actor> (self->current_sender()), failed::value, close::value, ec.value());
                 }
+                socket->close();
                 self->quit();
                 return closed::value;
             },
@@ -205,6 +207,8 @@ namespace CAF_TCP {
         };
     }
 
+    //TODO: DANGER user must be shure that all connections are exited when close TCP actor
+    //TODO: DANGER access to destoed objects in io callback
     worker start(actor_system& system, int workers_num) {
         scoped_actor self{ system };
 

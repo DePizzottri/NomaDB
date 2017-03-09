@@ -81,7 +81,7 @@ namespace CAF_TCP {
 
     using buffer_hint = atom_constant<atom("bufhint")>;
 
-    using error = atom_constant<atom("error")>;
+    //using error = atom_constant<atom("error")>;
 
     //accept
     //connect

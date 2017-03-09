@@ -263,7 +263,7 @@ namespace remoting {
                 //continue read
                 self->send(connection, CAF_TCP::do_read::value);
             },
-            [=](CAF_TCP::read_closed) {
+            [=](CAF_TCP::read_closed, CAF_TCP::connection conn) {
                 aout(self) << "Multiplexor: read closed" << endl;
             },
             [=](CAF_TCP::failed, CAF_TCP::do_read, int err) {
@@ -369,7 +369,7 @@ namespace remoting {
                 }
             },
             [=](add_new_connection, node_name const& name, CAF_TCP::connection connection) {
-                //aout(self) << "Node " << self_name << " connected to " << name <<endl;
+                aout(self) << "Node " << self_name << " connected to " << name <<endl;
                 self->state.nodes.insert({ name, connection });
             },
             [=](CAF_TCP::bound_atom) {
