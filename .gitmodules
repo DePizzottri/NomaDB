@@ -1,0 +1,3 @@
+[submodule "libs/delta-enabled-crdts"]
+	path = libs/delta-enabled-crdts
+	url = https://github.com/DePizzottri/delta-enabled-crdts.git
