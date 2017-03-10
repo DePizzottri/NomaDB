@@ -17,7 +17,6 @@ namespace remoting {
     using add_new_connection = atom_constant<atom("adnconn")>;
     using mediator_peer_id = atom_constant<atom("prxypid")>;
 
-
     template<class T>
     expected<CAF_TCP::buf_type> serialize(T const& data, actor_system& system) {
         CAF_TCP::buf_type buf;
@@ -76,6 +75,7 @@ namespace remoting {
 
     //TODO: maybe only typed actors?
     behavior mediator(event_based_actor* self, CAF_TCP::connection conn, actor local_actor, actor_id remote_proxy_id) {
+        //aout(self) << "Mediator created, local id: " << self->id() << " remote proxy id: " << remote_proxy_id << endl;
         self->monitor(conn); //TODO: test down cases
 
         self->monitor(local_actor);
@@ -122,7 +122,7 @@ namespace remoting {
     }
 
     behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_mediator_id) {
-        //aout(self) << "Proxy created" << endl;
+        //aout(self) << "Proxy created, local id: " << self->id() << " remote mediator id: "<< remote_mediator_id << endl;
         self->monitor(conn); //TODO: test down cases
 
         self->set_down_handler([=](down_msg& dmsg) {
@@ -136,6 +136,8 @@ namespace remoting {
                 aout(self) << "Failed to envelope message to remote actor " << self->system().render(envp.cerror()) << endl;
                 return caf::sec::unexpected_message;
             }
+
+            //aout(self) << "Forward message to remote mediator, local id: " << self->id() << " remote mediator id: " << remote_mediator_id << endl;
 
             self->send(conn, CAF_TCP::do_write::value, envp->to_buffer());
             //aout(self) << "Proxy default from id " << from->id() << " to id " << self->id() << endl;
@@ -205,19 +207,19 @@ namespace remoting {
 
                                 //find actor by name
                                 //send name to registry
-
+                                //aout(self) <<self->id()<< " Received discover message: " << e->msg << " remote proxy id: " << e->id << endl;
                                 auto local_actor = self->system().registry().get(e->msg.get_as<std::string>(0));
 
                                 if (!local_actor) {
                                     //TODO: send actor is absent
-                                    aout(self) << "Accept discover failed: no actor found" << endl;
+                                    aout(self) <<"Accept discover failed: no actor found" << endl;
                                     break;
                                 }
                                 
                                 auto local_mediator = self->spawn(mediator, connection, actor_cast<actor> (local_actor), e->id);
 
                                 //register proxy
-                                self->state.mediator_map[e->id] = local_mediator;
+                                self->state.mediator_map[local_mediator.id()] = local_mediator;
                                 self->monitor(local_mediator);
 
                                 break;
@@ -225,13 +227,14 @@ namespace remoting {
                             case(protocol::message_to): {
                                 auto e = envelope::from_message(msg, self->system());
                                 if (!e) {
-                                    aout(self) << "Failed to deserialize message to message " << self->system().render(e.cerror()) << endl;
+                                    aout(self) << "Failed to deserialize message_to message " << self->system().render(e.cerror()) << endl;
                                     continue;
                                 }
 
                                 //aout(self) << "Mediator received message " << e->msg << endl;
 
                                 //forward message to mediator actor
+                                //aout(self) << self->id() << " Received message_to message: " << e->msg << ", mediator: " << e->id << endl;
 
                                 auto imed = self->state.mediator_map.find(e->id);
 
@@ -244,7 +247,7 @@ namespace remoting {
                                     if (reg)
                                         anon_send(actor_cast<actor> (reg), e->msg);
                                     else
-                                        aout(self) << "Local mediator to forward messge ton found" << endl;
+                                        aout(self) << "Local mediator to forward message to not found, id: " << e->id << ", message: "<< e->msg << endl;
                                 }
 
                                 break;
@@ -252,7 +255,7 @@ namespace remoting {
                             case(protocol::handshake): {
                                 //send peer node name to remoting
 
-                                //TODO: not conneted node
+                                //TODO: not connected node
                                 self->send(rem, add_new_connection::value, msg.body, connection);
 
                                 break;
@@ -356,6 +359,8 @@ namespace remoting {
         };
     }
 
+    //TODO: remove name dependency
+    //TODO: quick return already discovered actor
     remoting::behavior_type make_remoting(remoting::stateful_pointer<remoting_state> self, CAF_TCP::worker tcp_actor, uint16_t port, node_name const& self_name) {
         //create income server
 
@@ -378,7 +383,7 @@ namespace remoting {
                 }
             },
             [=](add_new_connection, node_name const& name, CAF_TCP::connection connection) {
-                //aout(self) << "Node " << self_name << " connected to " << name <<endl;
+                aout(self) << "Node " << self_name << " connected to " << name <<endl;
                 self->state.nodes.insert({ name, connection });
             },
             [=](CAF_TCP::bound_atom) {
