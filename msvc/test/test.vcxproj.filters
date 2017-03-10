@@ -28,5 +28,11 @@
     <ClCompile Include="..\..\tests\remoting.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\tests\libs\crdt_test.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\tests\clustering.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

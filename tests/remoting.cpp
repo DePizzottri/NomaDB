@@ -7,7 +7,6 @@
 #include <CAF_TCP.hpp>
 #include <remoting.hpp>
 
-
 using namespace caf;
 using namespace CAF_TCP;
 using namespace std;
