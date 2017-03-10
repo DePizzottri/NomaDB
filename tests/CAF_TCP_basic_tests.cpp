@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_connect_to_self)
         scoped_actor connh{ system };
 
         //TODO: fix connect to localhost
-        self->send(io, CAF_TCP::connect_atom::value, "192.168.1.9", port, connh);
+        self->send(io, CAF_TCP::connect_atom::value, "127.0.0.1", port, connh);
 
         const buf_type data = { 'D', 'a', 't', 'a' };
 
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(CAF_TCP_stop_while_reading)
 
         scoped_actor connh{ system };
         //TODO: fix connect to localhost
-        connh->send(io, CAF_TCP::connect_atom::value, "192.168.1.9", port, connh);
+        connh->send(io, CAF_TCP::connect_atom::value, "127.0.0.1", port, connh);
 
         //start listening on port
         acch->request(io, long_timeout, bind_atom::value, port).receive(
