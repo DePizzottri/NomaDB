@@ -97,17 +97,18 @@ namespace clustering {
     //TODO: fix disconnect when nodes down
     //TODO: fix disconnect on spurious timeout
     message_handler gossip_receiver(stateful_actor<cluster_member_state>* self) {
+        auto cfg = dynamic_cast<const config*> (&self->system().config());
+
         message_handler gossip_receive =
         [=](gossip, AddressAWORSet their_members) {
             //self->state.addresses[from] = make_pair(host, port);
-                //aout(self) << "Gossip from " << from << endl;//<< " " << their_members << endl;
-                auto cfg = dynamic_cast<const config*> (&self->system().config());
+            //aout(self) << "Gossip received from " << self->current_sender() << endl;//<< " " << their_members << endl;
+            auto cfg = dynamic_cast<const config*> (&self->system().config());
 
-                //aout(self) << "Send gossip ack to " << from << endl;
-                self->send(self, merge_members::value, their_members);
+            self->send(self, merge_members::value, their_members);
 
-                //send gossip back
-                //self->send(from, gossip::value, self->state.cluster_members, actor_cast<actor> (self), cfg->host, cfg->port);
+            //send gossip back
+            //self->send(from, gossip::value, self->state.cluster_members, actor_cast<actor> (self), cfg->host, cfg->port);
         };
 
         return gossip_receive;
@@ -127,15 +128,35 @@ namespace clustering {
                     break;
                 }
             }
-            //remove_if(self->state.connected.begin(), self->state.connected.end(), [=](auto const& a) {
-            //    return a.second == dmsg.source;
-            //});
-            //self->state.connected.erase(dmsg.source.id());
         });
+
+        self->attach_functor([=](const error& reason) {
+            cout << "GSW exited: " << to_string(reason) << endl;
+        });
+        
+        //TODO: bug here
+        auto wait_discovered_behavior = [self, member_manager](full_address const& address_gossip_to, AddressAWORSet const& members) -> behavior {
+            return {
+                [=](::remoting::discovered_atom, ::remoting::node_name, ::remoting::actor_name actor_name, actor local_proxy) {
+                    self->state.connected[address_gossip_to] = local_proxy;
+                    self->monitor(local_proxy);
+
+                    self->anon_send(local_proxy, gossip::value, members);
+                    //aout(self) << "Gossip sended to " << local_proxy << endl;
+                    self->delayed_send(member_manager, tick_time, tick_atom::value);
+                    self->unbecome();
+
+                },
+                after(tick_time) >> [=] {
+                    aout(self) << "Node discover timeout " << address_gossip_to << endl;
+                    self->delayed_send(member_manager, tick_time, tick_atom::value);
+                    self->unbecome();
+                }
+            };
+        };
 
         return {
             [=](tick_atom, AddressAWORSet const& members) {
-                //aout(self) << "Gossip tick" << endl;
                 if (members.read().size() > 1) {
                     auto node_gossip_to = utils::choose_random_if(
                         members.read(),
@@ -144,131 +165,71 @@ namespace clustering {
                         }
                     );
 
-                    //discover gossiper on remote node
-                    self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node_gossip_to.node, node_gossip_to.address);
+                    //try to find already discovered remote gossiper
+                    auto igossip_to = self->state.connected.find(node_gossip_to);
 
-                    //start await discover answer
-                    //TODO: make tick possible while awaiting 
-                    self->become(keep_behavior, {
-                        [=](::remoting::discovered_atom, ::remoting::node_name, ::remoting::actor_name actor_name, actor local_proxy) {
-                            self->state.connected[node_gossip_to] = local_proxy;
-                            self->monitor(local_proxy);
+                    if (igossip_to != self->state.connected.end()) {
+                        self->anon_send(igossip_to->second, gossip::value, members);
+                        //aout(self) << "Gossip sended to " << igossip_to->second << endl;
+                        self->delayed_send(member_manager, tick_time, tick_atom::value);
+                    }
+                    else {
+                        //discover gossiper on remote node
+                        self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node_gossip_to.node, node_gossip_to.address);
 
-                            self->send(local_proxy, gossip::value, members);
-                            self->unbecome();
-                        },
-                        after(tick_time) >> [=] {
-                            aout(self) << "Node discover timeout " << node_gossip_to << endl;
-                            self->unbecome();
-                        }
-                    });
-
-                    //auto& mm = self->system().middleman();
-
-                    ////TODO: optimize connections, add timeout?
-                    //auto node = mm.connect(node_gossip_to.address.host, node_gossip_to.address.port);
-
-                    //find remote gossip actor
-
-                    //if (!node) {
-                    //    aout(self) << "Cannot connect to node: " << node_gossip_to.node << endl;
-                    //    self->send(member_manager, mem_down::value, node_gossip_to);
-                    //}
-                    //else {
-                    //    auto agt = remote_lookup(self->system(), gossip_actor_name::value, node_gossip_to.node, heartbeat_timeout);
-
-                    //    if (!agt) {
-                    //        if (!agt) {
-                    //            aout(self) << "Actor on node is not connected " << node_gossip_to.node << endl;
-                    //            self->send(member_manager, mem_down::value, node_gossip_to);
-                    //        }
-                    //    }
-                    //    else
-                    //    {
-                    //        //aout(self) << "Gossip to " << agt << endl;
-
-                    //        self->send(actor_cast<actor> (agt), gossip::value, members, self, cfg->host, cfg->port);
-                    //    }
-                    //}
+                        //start await discover answer
+                        //TODO: make tick possible while awaiting 
+                        self->become(keep_behavior, wait_discovered_behavior(node_gossip_to, members));
+                    }
                 }
                 else {
                     //TODO: startup from all seed nodes
-                    for (auto& node :seed_nodes) {
+                    auto finded = false;
+                    for (auto& node: seed_nodes) {
                         //don't gossip yourself!
                         if (node.address.host == cfg->host && node.address.port == cfg->port) {
                             continue;
                         }
 
-                        //discover gossiper on remote node
-                        self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node.node, node.address);
+                        finded = true;
+                        auto igossip_to = self->state.connected.find(node);
 
-                        //start await discover answer
-                        //TODO: make tick possible while awaiting 
-                        self->become(keep_behavior, {
-                            [=](::remoting::discovered_atom, ::remoting::node_name, ::remoting::actor_name actor_name, actor local_proxy) {
-                                self->state.connected[node] = local_proxy;
-                                self->monitor(local_proxy);
+                        if (igossip_to != self->state.connected.end()) {
+                            self->anon_send(igossip_to->second, gossip::value, members);
+                            //aout(self) << "Gossip sended to " << igossip_to->second << endl;
+                            self->delayed_send(member_manager, tick_time, tick_atom::value);
+                        }
+                        else {
+                            //start await discover answer
+                            //TODO: make tick possible while awaiting 
+                            self->become(keep_behavior, wait_discovered_behavior(node, members));
 
-                                self->send(local_proxy, gossip::value, members);
-                                self->unbecome();
-                            },
-                            after(tick_time) >> [=] {
-                                aout(self) << "Seed discover timeout " << node << endl;
-                                self->unbecome();
-                            }
-                        });
-
-                        //TODO: optimize connections, add timeout?
-                        //auto node_id = self->system().middleman().connect(node.host, node.port);
-
-                        //if (!node_id) {
-                        //    std::cerr << "Seed node not avalible " << self->system().render(node_id.error()) << endl;
-                        //    continue;
-                        //}
-
-                        //auto seed_actor = remote_lookup(self->system(), gossip_actor_name::value, *node_id, heartbeat_timeout);
-                        //auto seed_actor = self->system().middleman().remote_lookup(gossip_actor_name::value, *node_id);
-
-                        //if (!seed_actor) {
-                        //    std::cerr << "Seed node actor not avalible " << endl;
-                        //    continue;
-                        //}
-
-                        //self->send(actor_cast<actor> (seed_actor), gossip::value, members, self, cfg->host, cfg->port);
+                            //discover gossiper on remote node
+                            self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node.node, node.address);
+                        }
                     }
+
+                    if (!finded)
+                        self->delayed_send(member_manager, tick_time, tick_atom::value);
                 }
-                self->delayed_send(member_manager, tick_time, tick_atom::value);
             }
         };
     }
 
     message_handler gossip_sender(stateful_actor<cluster_member_state>* self, ::remoting::remoting remoting_actor) {
-        //auto await_gossip_ack = [=](gossip_ack, AWORSet their_members, actor from, string host, uint16_t port) {
-        //    //self->state.addresses[from] = make_pair(host, port);
-        //    self->send(self, merge_members::value, their_members);
-        //    aout(self) << "Gossip ack from " << from << " " << their_members.read() << endl;
-        //};
-
-        //auto await_gossip_ack_err = [=](actor g_to) {
-        //    return [=](error err) {
-        //        //TODO: add tires/timeout or even 'majority' to detect down nodes
-        //        aout(self) << "Gossip ack ERROR: " << self->system().render(err) << err.context() <<  endl;
-        //        self->send(self, mem_down::value, g_to);
-        //    };
-        //};
-
         auto worker = self->spawn(gossip_sender_worker, self->state.seed_nodes, self, remoting_actor);
 
         message_handler ticker =
             [=](tick_atom) {
-                self->delegate(worker, tick_atom::value, self->state.cluster_members);
+                //TODO: optimize not to spawn worker every time (have bug somewhere)
+                self->anon_send(worker, tick_atom::value, self->state.cluster_members);
             };
 
         return ticker;
     };
 
     message_handler gossiper_actor(stateful_actor<cluster_member_state>* self, ::remoting::remoting remoting_actor) {
-        self->set_default_handler(skip);
+        //self->set_default_handler(skip);
         return gossip_sender(self, remoting_actor).or_else(gossip_receiver(self));
     }
 
