@@ -155,6 +155,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\tests\caf_basics.cpp" />
     <ClCompile Include="..\..\tests\CAF_TCP_basic_tests.cpp" />
     <ClCompile Include="..\..\tests\clustering.cpp" />
     <ClCompile Include="..\..\tests\libs\crdt_test.cpp" />
