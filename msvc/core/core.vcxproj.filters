@@ -17,9 +17,21 @@
     <ClInclude Include="..\..\core\utils.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\core\replicator.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\AWORSetActor.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\utils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\replicator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\AWORSetActor.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
