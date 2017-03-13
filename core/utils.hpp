@@ -30,4 +30,7 @@ namespace utils {
 
         return ret;
     }
+
+
+    std::string random_string(uint16_t length = 10);
 }

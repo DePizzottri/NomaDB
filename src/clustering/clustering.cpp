@@ -301,14 +301,18 @@ namespace clustering {
 
         auto remoting = ::remoting::start_remoting(system, tcp, cfg.port, cfg.name);
 
-        auto heartbeater = system.spawn(cluster_member, remoting);
+        return start_cluster_membership(system, cfg, remoting);
+    }
+
+    actor start_cluster_membership(actor_system& system, config const& cfg, ::remoting::remoting rem) {
+        auto heartbeater = system.spawn(cluster_member, rem);
         scoped_actor self(system);
         //aout(self) << "HBT actor: " << heartbeater << endl;
 
         auto s = AddressAWORSet(cfg.name);
 
         //TODO: add external address detection / or from config
-        s.add(full_address{ {"127.0.0.1", cfg.port}, cfg.name });
+        s.add(full_address{ { "127.0.0.1", cfg.port }, cfg.name });
         anon_send(heartbeater, merge_members::value, s);
 
         //auto expected_port = system.middleman().open(cfg.port);

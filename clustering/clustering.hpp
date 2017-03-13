@@ -68,6 +68,8 @@ namespace clustering {
     //behavior cluster_member(stateful_actor<cluster_member_state>* self);
 
     actor start_cluster_membership(actor_system& system, config const& cfg);
+    
+    actor start_cluster_membership(actor_system& system, config const& cfg, ::remoting::remoting rem);
 };
 
 namespace std

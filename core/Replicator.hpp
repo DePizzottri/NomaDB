@@ -14,4 +14,4 @@ using repl_tick = atom_constant<atom("rtick")>;
 using sync = atom_constant<atom("rsync")>;
 
 //TODO: remove cluster_member dependecy
-actor spawn_intaworset(actor_system& system, string const& name, actor cluster_member, string const& node_name, chrono::milliseconds tick_interval);
+actor spawn_intaworset(actor_system& system, string const& name, actor cluster_member, string const& node_name, ::remoting::remoting rem, chrono::milliseconds tick_interval);
