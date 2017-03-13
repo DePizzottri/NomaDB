@@ -11,21 +11,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\examples\http\http.cpp">
+    <ClCompile Include="..\..\apps\http\http.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\examples\http\request_parser.cpp">
+    <ClCompile Include="..\..\apps\http\request_parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\examples\http\header.hpp">
+    <ClInclude Include="..\..\apps\http\header.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\examples\http\request.hpp">
+    <ClInclude Include="..\..\apps\http\request.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\examples\http\request_parser.hpp">
+    <ClInclude Include="..\..\apps\http\request_parser.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

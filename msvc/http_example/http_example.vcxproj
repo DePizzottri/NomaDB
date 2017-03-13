@@ -19,13 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\examples\http\http.cpp" />
-    <ClCompile Include="..\..\examples\http\request_parser.cpp" />
+    <ClCompile Include="..\..\apps\http\http.cpp" />
+    <ClCompile Include="..\..\apps\http\request_parser.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\examples\http\header.hpp" />
-    <ClInclude Include="..\..\examples\http\request.hpp" />
-    <ClInclude Include="..\..\examples\http\request_parser.hpp" />
+    <ClInclude Include="..\..\apps\http\header.hpp" />
+    <ClInclude Include="..\..\apps\http\request.hpp" />
+    <ClInclude Include="..\..\apps\http\request_parser.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8871CF87-FF55-4BC5-9399-263D6C105405}</ProjectGuid>
