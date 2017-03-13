@@ -7,51 +7,18 @@
 #include <clustering.hpp>
 #include <utils.hpp>
 #include <replicator.hpp>
+#include <remoting.hpp>
 
 using namespace caf;
 using namespace std;
 
-//TODO: change to full names when actor registry will allow it
-//TODO: somehow enshure unique names
-//behavior replicator_registry(stateful_actor<crdt_registry_state>* self) {
-//    //TODO: add erasing on down
-//    self->set_down_handler([=](scheduled_actor* who, down_msg& reason) {
-//        //self->state.registry.erase()
-//    });
-//
-//    return {
-//        [=](add_new_crdt, string const& name, actor who) {
-//            self->state.registry[name] = who;
-//            self->monitor(who);
-//        },
-//        [=](rmv_crdt, string const& name) {
-//            auto& reg = self->state.registry;
-//            auto whom = reg.find(name);
-//            if (whom != reg.end()) {
-//                self->demonitor(whom->second);
-//                reg.erase(whom);
-//            }
-//        },
-//        [=](sync, string const& name, AWORSet const& other) { //3%
-//            auto& reg = self->state.registry;
-//            auto whom = reg.find(name);
-//            if(whom != reg.end())
-//                self->send(whom->second, merge_data::value, other);
-//        }
-//    };
-//}
-
-//behavior replicator_actor_sync_send(event_based_actor* self, clustering::AddressAWORSet const& addresses, string const& name, chrono::milliseconds tick_interval) {
-//    auto cfg = dynamic_cast<const clustering::config*> (&self->system().config());
-//
-//    return 
-//
-//    };
-//}
+std::string replicator_name(remoting::actor_name const& name) {
+    return name + "repl";
+}
 
 //TODO: why sync erlier then "member up"
 //TODO: fix non-syncing
-behavior replicator_actor(event_based_actor* self, string const& name, actor data_backend, actor cluster_member, chrono::milliseconds tick_interval) {
+behavior replicator_actor(event_based_actor* self, string const& name, actor data_backend, actor cluster_member, ::remoting::remoting rem, chrono::milliseconds tick_interval) {
     auto cfg = dynamic_cast<const clustering::config*> (&self->system().config());
 
     self->link_to(data_backend);
@@ -59,15 +26,27 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
     self->system().registry().put(name, actor_cast<strong_actor_ptr> (self));
 
     self->attach_functor([&system = self->system(), name](const error& reason) mutable {
-        system.registry().erase(name + "repl");
+        system.registry().erase(replicator_name(name));
     });
 
     message_handler syncer = [=] (sync, AWORSet const& other) { //3%
         self->send(data_backend, merge_data::value, other);
     };
 
-    auto sync_sender_beh = [=](event_based_actor* self, clustering::AddressAWORSet const& addresses) -> message_handler {
-        return 
+    //TODO: GATHER pattern
+    auto sync_send_beh = [=](event_based_actor* self, AWORSet const& raw_data) -> message_handler {
+        //TODO: error handling
+        return [=](remoting::discovered_atom, remoting::node_name node, remoting::actor_name actor_name, actor proxy) {
+            self->send(proxy, sync::value, name, raw_data);
+            //tick again
+            self->unbecome();
+            self->unbecome();
+            self->delayed_send(self, tick_interval, repl_tick::value);
+        };
+    };
+
+    auto sync_discover_beh = [=](event_based_actor* self, clustering::AddressAWORSet const& addresses) -> message_handler {
+        return {
             [=](AWORSet const& raw_data) {
                 if (addresses.read().size() < 2) {
                     //aout(self) << "No peer to sync found" << endl;
@@ -81,20 +60,10 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
                     return a.node != cfg->name;
                 });
 
-                //auto remote_peer = clustering::remote_lookup(self->system(), crdt_registry_name, node_to_send.node, tick_interval / 2);
-
-                //if (!remote_peer) {
-                //    aout(self) << "Cannot connect to remote replicator on node: " << node_to_send << endl;
-                //}
-                //else {//send to that peer
-                //    //aout(self) << "Sync with " << remote_peer << endl;
-                //    self->send(actor_cast<actor> (remote_peer), sync::value, name, raw_data);
-                //}
-
-                ////tick again
-                self->unbecome();
-                self->delayed_send(self, tick_interval, repl_tick::value);
-        };        
+                self->become(keep_behavior, sync_send_beh(self, raw_data).or_else(syncer));
+                self->send(rem, ::remoting::discover_atom{}, replicator_name(name), node_to_send.node, node_to_send.address);
+            }
+        };
     };
 
     message_handler replic_beh = {
@@ -105,7 +74,7 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
         },
         [=](clustering::cluster_members, clustering::AddressAWORSet const& addresses) {
             //TODO: gather pattern
-            self->become(keep_behavior, sync_sender_beh(self, addresses).or_else(syncer));
+            self->become(keep_behavior, sync_discover_beh(self, addresses).or_else(syncer));
             self->send(data_backend, get_raw_data::value);
         },
         [=](crdt_name) {
@@ -117,9 +86,9 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
 }
 
 //TODO: remove cluster_member dependecy
-actor spawn_intaworset(actor_system& system, string const& name, actor cluster_member, string const& node_name, chrono::milliseconds tick_interval) {
+actor spawn_intaworset(actor_system& system, string const& name, actor cluster_member, string const& node_name, ::remoting::remoting rem, chrono::milliseconds tick_interval) {
     auto set_actor = system.spawn(AWORSet_actor, name, node_name);
-    auto repl_actor = system.spawn(replicator_actor, name, set_actor, cluster_member, tick_interval);
+    auto repl_actor = system.spawn(replicator_actor, name, set_actor, cluster_member, rem, tick_interval);
 
     return set_actor;
 }
