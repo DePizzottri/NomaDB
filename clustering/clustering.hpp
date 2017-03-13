@@ -51,7 +51,7 @@ namespace clustering {
     using gossip_timeout =      atom_constant<atom("gostout")>;
     using get_members =         atom_constant<atom("getmem")>;
     using cluster_members =     atom_constant<atom("clustmem")>;
-    //using gossip_actor_name =   atom_constant<atom("CGA")>;
+    using stop_atom =           atom_constant<atom("clstop")>;
     const auto gossip_actor_name = "_cluster_gossiper"s;
  
 #undef DECLARE_ATOM
