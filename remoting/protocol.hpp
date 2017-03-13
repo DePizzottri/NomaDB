@@ -110,7 +110,7 @@ namespace remoting {
                     return result_state::need_more;
                 }
                 case(state::body_size): {
-                    msg.size |= uint16_t(in) << ((ptr - sizeof(msg.action)) * sizeof(char));
+                    msg.size |= uint16_t(unsigned char(in)) << ((ptr - sizeof(msg.action)) * sizeof(char));
                     ptr++;
                     if (ptr == sizeof(msg.action) + sizeof(msg.size)) {
                         ptr = msg.size;
