@@ -34,25 +34,30 @@ BOOST_AUTO_TEST_CASE(clustering_connect_to_from_seed)
 
     auto cluster_node = clustering::start_cluster_membership(system_node, config_node);
 
-    scoped_actor seed_client{ system_seed };
-    seed_client->send(cluster_seed, clustering::reg_client::value, seed_client);
-    seed_client->receive(
-        [=](clustering::mem_up, clustering::full_address who) {
-            BOOST_TEST_CHECKPOINT("Memeber UP");
-        },
-        after(5s) >> [=] {
-            BOOST_ERROR("Seed member up timeout"); //may spuriously fail
-        }
-    );
+    {
+        scoped_actor seed_client{ system_seed };
+        seed_client->send(cluster_seed, clustering::reg_client::value, seed_client);
+        seed_client->receive(
+            [=](clustering::mem_up, clustering::full_address who) {
+                BOOST_TEST_CHECKPOINT("Memeber UP");
+            },
+            after(5s) >> [=] {
+                BOOST_ERROR("Seed member up timeout"); //may spuriously fail
+            }
+        );
 
-    scoped_actor node_client{ system_node };
-    node_client->send(cluster_node, clustering::reg_client::value, node_client);
-    node_client->receive(
-        [=](clustering::mem_up, clustering::full_address who) {
-            BOOST_TEST_CHECKPOINT("Memeber UP");
-        },
-        after(5s) >> [=] {
-            BOOST_ERROR("Node member up timeout"); //may spuriously fail
-        }
-    );
+        scoped_actor node_client{ system_node };
+        node_client->send(cluster_node, clustering::reg_client::value, node_client);
+        node_client->receive(
+            [=](clustering::mem_up, clustering::full_address who) {
+                BOOST_TEST_CHECKPOINT("Memeber UP");
+            },
+            after(5s) >> [=] {
+                BOOST_ERROR("Node member up timeout"); //may spuriously fail
+            }
+        );
+    }
+
+    anon_send(cluster_seed, clustering::stop_atom::value);
+    anon_send(cluster_node, clustering::stop_atom::value);
 }

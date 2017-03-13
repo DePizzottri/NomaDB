@@ -16,6 +16,8 @@ namespace remoting {
 
     using add_new_connection = atom_constant<atom("adnconn")>;
 
+    using stop_atom = atom_constant<atom("rmstop")>;
+
     struct address {
         std::string host;
         uint16_t    port;
@@ -60,7 +62,8 @@ namespace remoting {
         reacts_to<discover_atom, string, node_name, address>,
         //TODO: hide private interface
         reacts_to<add_new_connection, node_name, CAF_TCP::connection>,
-        reacts_to<CAF_TCP::bound_atom>
+        reacts_to<CAF_TCP::bound_atom>,
+        reacts_to<stop_atom>
     >;
 
     ////TODO: maybe only typed actors?

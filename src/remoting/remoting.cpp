@@ -65,15 +65,10 @@ namespace remoting {
         return e;
     }
 
-    using remoting = typed_actor<
-        reacts_to<discover_atom, string, node_name, address>,
-        reacts_to<add_new_connection, node_name, CAF_TCP::connection>,
-        reacts_to<CAF_TCP::bound_atom>
-    >;
-
     using from_remote_atom = atom_constant<atom("fromrem")>;
 
     //TODO: maybe only typed actors?
+    //TODO: allow to send non anon messages
     behavior mediator(event_based_actor* self, CAF_TCP::connection conn, actor local_actor, actor_id remote_proxy_id) {
         //aout(self) << "Mediator created, local id: " << self->id() << " remote proxy id: " << remote_proxy_id << endl;
         self->monitor(conn); //TODO: test down cases
@@ -361,6 +356,7 @@ namespace remoting {
 
     //TODO: remove name dependency
     //TODO: quick return already discovered actor
+    //TODO: hide internal interface
     remoting::behavior_type make_remoting(remoting::stateful_pointer<remoting_state> self, CAF_TCP::worker tcp_actor, uint16_t port, node_name const& self_name) {
         //create income server
 
@@ -390,6 +386,10 @@ namespace remoting {
                 //create new connection handler
                 auto nca = self->spawn(new_connection_acceptor, self);
                 self->send(tcp_actor, CAF_TCP::accept_atom::value, actor_cast<actor> (nca));
+            },
+            [=](stop_atom) {
+                //TODO: graceful stop
+                anon_send(tcp_actor, CAF_TCP::stop::value);
             }
         };
     }

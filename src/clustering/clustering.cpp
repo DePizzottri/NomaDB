@@ -233,6 +233,7 @@ namespace clustering {
         return gossip_sender(self, remoting_actor).or_else(gossip_receiver(self));
     }
 
+    //TODO: hide internal interface
     behavior cluster_member(stateful_actor<cluster_member_state>* self, ::remoting::remoting remoting_actor) {
         message_handler member_manager {
             [=](merge_members, AddressAWORSet their_members) {
@@ -283,6 +284,10 @@ namespace clustering {
             [=](get_members) {
                 assert(self->state.cluster_members.read().size() > 0);
                 return make_message(cluster_members::value, self->state.cluster_members);
+            },
+            [=](stop_atom) {
+                //TODO: graceful stop
+                anon_send(remoting_actor, ::remoting::stop_atom::value);
             }
         };
 
