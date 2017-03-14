@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <caf/all.hpp>
 
 #include <AWORSet.hpp>
@@ -11,12 +13,25 @@ namespace clustering {
 
     using namespace caf;
     using namespace std;
-    //using namespace remoting;
+
+    struct unique_node_name {
+        remoting::node_name name;
+        std::string         suffix;
+
+        std::string to_string() const;
+
+        bool operator==(unique_node_name const& other) const;
+        bool operator<(unique_node_name const& other) const;
+    };
+
+    template <class Inspector>
+    auto inspect(Inspector& f, clustering::unique_node_name& x) {
+        return f(meta::type_name("unique_node_name"), x.name, x.suffix);
+    }
 
     struct full_address {
         remoting::address     address;
-        //caf::node_id node;
-        remoting::node_name   node;
+        unique_node_name      node;
 
         bool operator==(full_address const& other) const;
         bool operator<(full_address const& other) const;
@@ -32,9 +47,6 @@ namespace clustering {
         remoting::node_name name = "";
     };
 
-    //TODO: move timeouts to config and check its relations
-    //auto tick_time = chrono::seconds(1);
-    //auto heartbeat_timeout = chrono::seconds(5);
 
 #define DECLARE_ATOM(name) \
     using name = atom_constant<atom(#name)>;
@@ -56,17 +68,6 @@ namespace clustering {
  
 #undef DECLARE_ATOM
 
-
-    //message_handler gossip_receiver(stateful_actor<cluster_member_state>* self);
-
-    //behavior gossip_sender_worker(event_based_actor* self, unordered_set<full_address> const& seed_nodes, actor parent);
-
-    //message_handler gossip_sender(stateful_actor<cluster_member_state>* self);
-
-    //message_handler gossiper_actor(stateful_actor<cluster_member_state>* self);
-
-    //behavior cluster_member(stateful_actor<cluster_member_state>* self);
-
     actor start_cluster_membership(actor_system& system, config const& cfg);
     
     actor start_cluster_membership(actor_system& system, config const& cfg, ::remoting::remoting rem);
@@ -87,13 +88,25 @@ namespace std
         }
     };
 
+    template<> struct hash<clustering::unique_node_name>
+    {
+        typedef clustering::unique_node_name argument_type;
+        typedef std::size_t result_type;
+        result_type operator()(argument_type const& s) const
+        {
+            result_type const h1(std::hash<remoting::node_name>{}(s.name));
+            result_type const h2(std::hash<std::string>{}(s.suffix));
+            return h1 ^ (h2 << 1);
+        }
+    };
+
     template<> struct hash<clustering::full_address>
     {
         typedef clustering::full_address argument_type;
         typedef std::size_t result_type;
         result_type operator()(argument_type const& s) const
         {
-            result_type const h1(std::hash<remoting::node_name>{}(s.node));
+            result_type const h1(std::hash<clustering::unique_node_name>{}(s.node));
             result_type const h2(std::hash<remoting::address>{}(s.address));
             return h1 ^ (h2 << 1);
         }

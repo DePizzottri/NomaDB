@@ -49,11 +49,11 @@ namespace CAF_TCP {
                         anon_send(actor_cast<actor>(sender), received::value, std::move(b), length, s);
                     }
                     else {
+                        aout(self) << "Read failed: " << ec.message() << std::endl;
+                        anon_send(actor_cast<actor> (sender), failed::value, do_read::value, ec.value());
                         boost::system::error_code ignored_ec;
                         socket->shutdown(tcp::socket::shutdown_receive, ignored_ec);
-                        aout(self) << "Read failed: " << ec.message() << std::endl;
                         anon_send(actor_cast<actor> (sender), read_closed::value, s);
-                        anon_send(actor_cast<actor> (sender), failed::value, do_read::value, ec.value());
                     }
                 });
             },

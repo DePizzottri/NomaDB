@@ -11,6 +11,12 @@ namespace remoting {
         return other.host < host;
     }
 
+    bool address::operator!=(address const& other) const {
+        if (other.host == host)
+            return other.port != port;
+        return other.host != host;
+    }
+
     using namespace caf;
     using namespace std;
 
@@ -80,6 +86,10 @@ namespace remoting {
             self->quit(dmsg.reason);
         });
 
+        //self->attach_functor([](const error& reason) {
+        //    cerr << "Mediator quits" << endl;
+        //});
+
         self->set_default_handler([=](scheduled_actor* from, message_view& msg) -> result<message> {
             //aout(self) << "Mediator default from id " << from->id() << " to id " << self->id() << endl;
             //aout(self) << "Mediator received message " << msg.move_content_to_message() << endl;
@@ -130,6 +140,10 @@ namespace remoting {
         self->set_down_handler([=](down_msg& dmsg) {
             self->quit(dmsg.reason);
         });
+
+        //self->attach_functor([](const error& reason) {
+        //    cerr << "Proxy quits" << endl;
+        //});
 
         self->set_default_handler([=](scheduled_actor* from, message_view& msg) -> result<message> {
             auto envp = envelope{ remote_mediator_id, msg.move_content_to_message() }.to_message(protocol::message_to, self->system());
@@ -197,6 +211,10 @@ namespace remoting {
         self->set_down_handler([=](down_msg& dmsg) {
             self->state.mediator_map.erase(dmsg.source.id());
         });
+
+        //self->attach_functor([](const error& reason) {
+        //    cerr << "IMM quits" << endl;
+        //});
 
         return {
             //TODO: ensure serial receiving
@@ -271,7 +289,8 @@ namespace remoting {
                                     if (reg)
                                         anon_send(actor_cast<actor> (reg), e->msg);
                                     else
-                                        aout(self) << "Local mediator to forward message to not found, id: " << e->id << ", message: "<< e->msg << endl;
+                                        //TODO: sometimes here
+                                        aout(self) << "Remoting: local mediator to forward message to not found, id: " << e->id << ", message: "<< e->msg << endl;
                                 }
 
                                 break;
@@ -304,6 +323,14 @@ namespace remoting {
             },
             [=](CAF_TCP::read_closed, CAF_TCP::connection conn) {
                 aout(self) << "Remoting: multiplexor read closed" << endl;
+                //gently close connection (wait for write ends
+                self->send(connection, CAF_TCP::close::value);
+            },
+            [=](CAF_TCP::closed) {
+                //maybe don't need to handle this message
+            },
+            [=](CAF_TCP::failed, CAF_TCP::do_write, int err) {
+                //remote actor not found send failed
             },
             [=](CAF_TCP::failed, CAF_TCP::do_read, int err) {
                 aout(self) << "Remoting: multiplexor read failed with code "<< err << endl;
@@ -389,6 +416,10 @@ namespace remoting {
                 //send message to remoting to add new name <-> connection 
                 self->send(rem, add_new_connection::value, node, connection);
             },
+            [=](CAF_TCP::failed, CAF_TCP::do_write, int code) {
+                //TODO: add reason message
+                self->send(answer_to, discover_failed_atom::value, node, who);
+            },
             [=](CAF_TCP::failed, CAF_TCP::connect_atom, int code) {
                 //TODO: add reason message
                 self->send(answer_to, discover_failed_atom::value, node, who);
@@ -408,8 +439,8 @@ namespace remoting {
         self->set_down_handler([=](down_msg& dmsg) {
             for (auto& c : self->state.nodes) {
                 if (c.second == dmsg.source) {
-                    self->state.nodes.erase(c.first);
                     aout(self) << "Node " << self_name << " disconnected from " << c.first << endl;
+                    self->state.nodes.erase(c.first);
                     self->demonitor(dmsg.source);
                     break;
                 }

@@ -19,6 +19,16 @@ namespace clustering {
         return other.node < node;
     }
 
+    bool unique_node_name::operator==(unique_node_name const& other) const {
+        return other.name == name && other.suffix == suffix;
+    }
+
+    bool unique_node_name::operator<(unique_node_name const& other) const {
+        if (other.name == name)
+            return other.suffix < suffix;
+        return other.suffix < suffix;
+    }
+
     //TODO: move serialization to another header
     template <class Inspector>
     auto inspect(Inspector& f, clustering::full_address& x) {
@@ -30,13 +40,18 @@ namespace clustering {
 
     config::config() {
         add_message_type<AddressAWORSet>("AddressAWORSet");
+        add_message_type<unique_node_name>("unique_node_name");
         //TODO: config combinations
         //add_message_type<AWORSet>("intAWORSet");
 
         opt_group{ custom_options_, "global" }
             .add(port, "port,p", "set port")
-            .add(host, "host,H", "set node")
+            .add(host, "host,H", "set host")
             .add(name, "name,n", "set node name");
+    }
+
+    std::string unique_node_name::to_string() const {
+        return name + ":" + suffix;
     }
 
     //TODO: move timeouts to config and check its relations
@@ -80,7 +95,7 @@ namespace clustering {
     struct gossiper {
         //TODO: add filling seed nodes from config
         unordered_set<full_address> seed_nodes = {
-             { { "127.0.0.1", 6666 }, "seed1"s }
+             { { "127.0.0.1", 6666 }, { "seed1"s, "" }}
             //,{ { "127.0.0.1", 6667 }, "seed2"s }
         };
     };
@@ -149,7 +164,8 @@ namespace clustering {
 
                 },
                 [=](::remoting::discover_failed_atom, remoting::node_name node, remoting::actor_name act) {
-                    aout(self) << "Remoting: node failed to discover " << address_gossip_to << endl;
+                    aout(self) << "Clustering: node failed to discover " << address_gossip_to << endl;
+                    self->send(member_manager, mem_down::value, address_gossip_to);
                     self->delayed_send(member_manager, tick_time, tick_atom::value);
                     self->unbecome();
                 }
@@ -167,10 +183,12 @@ namespace clustering {
         return {
             [=](tick_atom, AddressAWORSet const& members) {
                 if (members.read().size() > 1) {
+                    //don't gossip youself
                     auto node_gossip_to = utils::choose_random_if(
                         members.read(),
                         [=](full_address const& a) -> bool {
-                            return a.node != cfg->name;
+                            //return a.node != cfg->name;
+                            return a.address != remoting::address{ cfg->host, cfg->port };
                         }
                     );
 
@@ -184,7 +202,7 @@ namespace clustering {
                     }
                     else {
                         //discover gossiper on remote node
-                        self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node_gossip_to.node, node_gossip_to.address);
+                        self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node_gossip_to.node.name, node_gossip_to.address);
 
                         //start await discover answer
                         //TODO: make tick possible while awaiting 
@@ -214,7 +232,7 @@ namespace clustering {
                             self->become(keep_behavior, wait_discovered_behavior(node, members));
 
                             //discover gossiper on remote node
-                            self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node.node, node.address);
+                            self->send(remoting_actor, ::remoting::discover_atom::value, gossip_actor_name, node.node.name, node.address);
                         }
                     }
 
@@ -280,12 +298,16 @@ namespace clustering {
                 //aout(self) << "Members AWORS: " << self->state.cluster_members.read() << endl;
             },
             [=](mem_down, full_address mem) {
-                //remove form cluster_members
-                self->state.cluster_members.rmv(mem);
+                //for workaround to not remove node many times from syncs and local gossip: do not remove already removed
+                auto& nodes = self->state.cluster_members.read();
+                if (nodes.find(mem) != nodes.end()) {
+                    //remove form cluster_members
+                    self->state.cluster_members.rmv(mem);
 
-                //populate removed member
-                for (auto& m : self->state.clients)
-                    self->send(m, mem_down::value, mem);
+                    //populate removed member
+                    for (auto& m : self->state.clients)
+                        self->send(m, mem_down::value, mem);
+                }
             },
             [=](reg_client, actor member) {
                 self->state.clients.insert(member);
@@ -314,14 +336,19 @@ namespace clustering {
     }
 
     actor start_cluster_membership(actor_system& system, config const& cfg, ::remoting::remoting rem) {
-        auto heartbeater = system.spawn(cluster_member, rem);
-        scoped_actor self(system);
-        //aout(self) << "HBT actor: " << heartbeater << endl;
+        //TODO: Unique node name
+        auto unode_name = unique_node_name{ cfg.name, utils::random_string() };
 
-        auto s = AddressAWORSet(cfg.name);
+        scoped_actor self{ system };
+
+        aout(self) << "Clustering: unique node name: " << unode_name << endl;
+
+        auto heartbeater = system.spawn(cluster_member, rem);
+
+        auto s = AddressAWORSet(unode_name.to_string());
 
         //TODO: add external address detection / or from config
-        s.add(full_address{ { "127.0.0.1", cfg.port }, cfg.name });
+        s.add(full_address{ { "127.0.0.1", cfg.port }, unode_name });
         anon_send(heartbeater, merge_members::value, s);
 
         //auto expected_port = system.middleman().open(cfg.port);

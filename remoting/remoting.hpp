@@ -24,6 +24,8 @@ namespace remoting {
 
         bool operator==(address const& other) const;
 
+        bool operator!=(address const& other) const;
+
         bool operator<(address const& other) const;
     };
 

@@ -30,8 +30,6 @@ behavior cluster_client(event_based_actor* self, vector<actor> aworses) {
 struct config: replicator_config, clustering::config {};
 
 void caf_main(actor_system& system, const config& cfg) {
-    auto node_name = cfg.name + '_' + utils::random_string();
-
     auto tcp = CAF_TCP::start(system, 4);
 
     auto remoting = ::remoting::start_remoting(system, tcp, cfg.port, cfg.name);
@@ -42,7 +40,7 @@ void caf_main(actor_system& system, const config& cfg) {
     vector<actor> aworses;
     
     for (int i = 0; i < SIZE; ++i) {
-        aworses.emplace_back(spawn_intaworset(system, "awors" + std::to_string(i), cluster_member, node_name, remoting, chrono::seconds(1)));
+        aworses.emplace_back(spawn_intaworset(system, "awors" + std::to_string(i), cluster_member, cfg.name, remoting, chrono::seconds(1)));
     }
 
     auto client = system.spawn(cluster_client, aworses);

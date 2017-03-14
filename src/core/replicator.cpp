@@ -68,11 +68,11 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
                 //choose peer at random
                 auto node_to_send = utils::choose_random_if(addresses.read(),
                     [=](clustering::full_address const& a) -> bool {
-                    return a.node != cfg->name;
+                    return a.node.name != cfg->name;
                 });
 
                 self->become(keep_behavior, sync_send_beh(self, raw_data).or_else(syncer));
-                self->send(rem, ::remoting::discover_atom{}, replicator_name(name), node_to_send.node, node_to_send.address);
+                self->send(rem, ::remoting::discover_atom{}, replicator_name(name), node_to_send.node.name, node_to_send.address);
             }
         };
     };
