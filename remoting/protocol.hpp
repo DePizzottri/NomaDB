@@ -29,10 +29,10 @@ namespace remoting {
                 CAF_TCP::buf_type ret;
 
                 ret.push_back(char(action & 0xFF));
-                ret.push_back(char((action & 0xFF) >> 8));
+                ret.push_back(char((action & 0xFF00) >> 8));
 
                 ret.push_back(char(size & 0xFF));
-                ret.push_back(char((size & 0xFF) >> 8));
+                ret.push_back(char((size & 0xFF00) >> 8));
 
                 for (const auto& b : body)
                     ret.push_back(b);
@@ -54,6 +54,13 @@ namespace remoting {
     
     class parser {
     public:
+        parser() :
+            state(state::action),
+            act_buf(0),
+            ptr(0)
+        {
+        }
+
         enum class result_state {
             parsed, fail, need_more
         };
@@ -110,7 +117,7 @@ namespace remoting {
                     return result_state::need_more;
                 }
                 case(state::body_size): {
-                    msg.size |= uint16_t(unsigned char(in)) << ((ptr - sizeof(msg.action)) * sizeof(char));
+                    msg.size |= uint16_t(unsigned char(in)) << ((ptr - sizeof(msg.action)) * sizeof(char)*8);
                     ptr++;
                     if (ptr == sizeof(msg.action) + sizeof(msg.size)) {
                         ptr = msg.size;
