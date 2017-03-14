@@ -27,7 +27,9 @@ behavior cluster_client(event_based_actor* self, vector<actor> aworses) {
     };
 }
 
-void caf_main(actor_system& system, const clustering::config& cfg) {
+struct config: replicator_config, clustering::config {};
+
+void caf_main(actor_system& system, const config& cfg) {
     auto node_name = cfg.name + '_' + utils::random_string();
 
     auto tcp = CAF_TCP::start(system, 4);

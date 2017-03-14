@@ -12,9 +12,16 @@
 using namespace caf;
 using namespace std;
 
+replicator_config::replicator_config() {
+    add_message_type<AWORSet>("intAWORSet");
+}
+
 std::string replicator_name(remoting::actor_name const& name) {
     return name + "repl";
 }
+
+using repl_tick = atom_constant<atom("rtick")>;
+using sync = atom_constant<atom("rsync")>;
 
 //TODO: why sync erlier then "member up"
 //TODO: fix non-syncing
@@ -23,21 +30,24 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
 
     self->link_to(data_backend);
 
-    self->system().registry().put(name, actor_cast<strong_actor_ptr> (self));
+    self->system().registry().put(replicator_name(name), actor_cast<strong_actor_ptr> (self));
 
-    self->attach_functor([&system = self->system(), name](const error& reason) mutable {
+    self->attach_functor([&system = self->system(), name, self](const error& reason) mutable {
         system.registry().erase(replicator_name(name));
+        aout(self) << "Repicator " + replicator_name(name) << " quited " << system.render(reason)<<  endl;
     });
 
     message_handler syncer = [=] (sync, AWORSet const& other) { //3%
         self->send(data_backend, merge_data::value, other);
     };
 
+    self->delayed_send(self, tick_interval, repl_tick::value);
+
     //TODO: GATHER pattern
     auto sync_send_beh = [=](event_based_actor* self, AWORSet const& raw_data) -> message_handler {
         //TODO: error handling
         return [=](remoting::discovered_atom, remoting::node_name node, remoting::actor_name actor_name, actor proxy) {
-            self->send(proxy, sync::value, name, raw_data);
+            self->anon_send(proxy, sync::value, raw_data);
             //tick again
             self->unbecome();
             self->unbecome();
@@ -49,8 +59,9 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
         return {
             [=](AWORSet const& raw_data) {
                 if (addresses.read().size() < 2) {
-                    //aout(self) << "No peer to sync found" << endl;
+                    aout(self) << "No peer to sync found" << endl;
                     self->delayed_send(self, tick_interval, repl_tick::value);
+                    self->unbecome();
                     return;
                 }
 

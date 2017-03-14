@@ -158,6 +158,7 @@
     <ClCompile Include="..\..\tests\caf_basics.cpp" />
     <ClCompile Include="..\..\tests\CAF_TCP_basic_tests.cpp" />
     <ClCompile Include="..\..\tests\clustering.cpp" />
+    <ClCompile Include="..\..\tests\remoting_parser.cpp" />
     <ClCompile Include="..\..\tests\libs\crdt_test.cpp" />
     <ClCompile Include="..\..\tests\remoting.cpp" />
     <ClCompile Include="stdafx.cpp">

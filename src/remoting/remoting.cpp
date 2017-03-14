@@ -16,6 +16,7 @@ namespace remoting {
 
     using add_new_connection = atom_constant<atom("adnconn")>;
     using mediator_peer_id = atom_constant<atom("prxypid")>;
+    using remote_actor_not_found = atom_constant<atom("rmactnf")>;
 
     template<class T>
     expected<CAF_TCP::buf_type> serialize(T const& data, actor_system& system) {
@@ -81,6 +82,7 @@ namespace remoting {
 
         self->set_default_handler([=](scheduled_actor* from, message_view& msg) -> result<message> {
             //aout(self) << "Mediator default from id " << from->id() << " to id " << self->id() << endl;
+            //aout(self) << "Mediator received message " << msg.move_content_to_message() << endl;
             anon_send(local_actor, msg.move_content_to_message());
             return caf::sec::unexpected_message;
         });
@@ -100,7 +102,7 @@ namespace remoting {
         auto e = forward_to_remote_proxy(msg);
 
         if (e) {
-            aout(self) << "Failed to send local proxy id" << endl;
+            aout(self) << "Remoting: failed to send local mediator id" << endl;
             self->quit(e);
         }
 
@@ -109,13 +111,18 @@ namespace remoting {
         return {
             [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
                 //OK
-            }
+            },
             //TODO: handle down/exit
-            //TODO: handle errors
+            [=](CAF_TCP::failed, CAF_TCP::do_write, int code) {
+                aout(self) << "Local mediator failed to write, quit" << endl;
+                self->quit();
+            }
+            //TODO: handle more errors
         };
 
     }
 
+    //TODO: add name of remote actor
     behavior proxy(event_based_actor* self, CAF_TCP::connection conn, actor_id remote_mediator_id) {
         //aout(self) << "Proxy created, local id: " << self->id() << " remote mediator id: "<< remote_mediator_id << endl;
         self->monitor(conn); //TODO: test down cases
@@ -133,6 +140,8 @@ namespace remoting {
             }
 
             //aout(self) << "Forward message to remote mediator, local id: " << self->id() << " remote mediator id: " << remote_mediator_id << endl;
+
+            //aout(self) << "Proxy received message " << msg.move_content_to_message() << endl;
 
             self->send(conn, CAF_TCP::do_write::value, envp->to_buffer());
             //aout(self) << "Proxy default from id " << from->id() << " to id " << self->id() << endl;
@@ -153,10 +162,13 @@ namespace remoting {
         return {
             [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
                 //OK
-            }
-
+            },
             //TODO: handle down/exit
             //TODO: handle errors
+            [=](CAF_TCP::failed, CAF_TCP::do_write, int code) {
+                aout(self) << "Local proxy failed to write, quit" << endl;
+                self->quit();
+            }
         };
     }
 
@@ -169,6 +181,11 @@ namespace remoting {
                 self->send(discoverer, mediator_peer_id::value, remote_mediator_id);
                 self->become(proxy(self, conn, remote_mediator_id));
                 self->system().registry().erase(self->id());
+            },
+            [=](remote_actor_not_found) {
+                aout(self) << "Remoting: remote actor not found, half-proxy quit" << endl;
+                self->system().registry().erase(self->id());
+                self->quit();
             }
         };
     }
@@ -189,9 +206,11 @@ namespace remoting {
                 auto& msg = self->state.msg;
                 parser::parse_result pres{parser::result_state::need_more, buf.begin() };
                 do {
-                    pres = parser.parse(msg, pres.end, buf.end());
+                    pres = parser.parse(msg, pres.end, buf.begin() + length);
 
                     if (pres.state == parser::result_state::parsed) {
+                        //cout << "Parsed: " + to_string((int)msg.action) +  " " + to_string(msg.size) + "\n";
+
                         switch (msg.action) {
                             case(protocol::discover): {
                                 auto e = envelope::from_message(msg, self->system());
@@ -207,26 +226,36 @@ namespace remoting {
 
                                 if (!local_actor) {
                                     //TODO: send actor is absent
-                                    aout(self) <<"Accept discover failed: no actor found" << endl;
+                                    aout(self) <<"Remoting: accept discover failed: actor with name "<< e->msg.get_as<std::string>(0) << " not found" << endl;
+
+                                    auto ee = envelope{ e->id, make_message(remote_actor_not_found::value) }.to_message(protocol::message_to, self->system());
+
+                                    if (!ee) {
+                                        aout(self) << "Remoting: failed to serialize remote actor not found envelope " << self->system().render(ee.cerror());
+                                    }
+                                    else {
+                                        self->send(connection, CAF_TCP::do_write::value, ee->to_buffer());
+                                    }
+
                                     break;
                                 }
                                 
-                                auto local_mediator = self->spawn(mediator, connection, actor_cast<actor> (local_actor), e->id);
+                                auto local_mediator = self->spawn<monitored>(mediator, connection, actor_cast<actor> (local_actor), e->id);
 
                                 //register proxy
+                                //TODO: may proxy quit before?
                                 self->state.mediator_map[local_mediator.id()] = local_mediator;
-                                self->monitor(local_mediator);
 
                                 break;
                             }
                             case(protocol::message_to): {
                                 auto e = envelope::from_message(msg, self->system());
                                 if (!e) {
-                                    aout(self) << "Failed to deserialize message_to message " << self->system().render(e.cerror()) << endl;
+                                    aout(self) << "Remoting: failed to deserialize message_to message " << self->system().render(e.cerror()) << endl;
                                     continue;
                                 }
 
-                                //aout(self) << "Mediator received message " << e->msg << endl;
+                                //aout(self) << "Multiplexor received message " << e->msg << endl;
 
                                 //forward message to mediator actor
                                 //aout(self) << self->id() << " Received message_to message: " << e->msg << ", mediator: " << e->id << endl;
@@ -270,11 +299,14 @@ namespace remoting {
                 //continue read
                 self->send(connection, CAF_TCP::do_read::value);
             },
+            [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
+                //remote actor not found sended
+            },
             [=](CAF_TCP::read_closed, CAF_TCP::connection conn) {
-                aout(self) << "Multiplexor: read closed" << endl;
+                aout(self) << "Remoting: multiplexor read closed" << endl;
             },
             [=](CAF_TCP::failed, CAF_TCP::do_read, int err) {
-                aout(self) << "Multiplexor: read failed with code "<< err << endl;
+                aout(self) << "Remoting: multiplexor read failed with code "<< err << endl;
             }
         };
     }
@@ -307,7 +339,7 @@ namespace remoting {
                                                                       //prepare discover message
         auto ee = envelope{ local_proxy.id(), make_message(who) }.to_message(protocol::discover, self->system());
         if (!ee) {
-            aout(self) << "Failed to serialize discover envelope " << self->system().render(ee.cerror());
+            aout(self) << "Remoting: failed to serialize discover envelope " << self->system().render(ee.cerror());
             self->send_exit(local_proxy, exit_reason::user_shutdown);
             self->send(answer_to, discover_failed_atom::value, node, who);
             return{};
@@ -322,8 +354,14 @@ namespace remoting {
             [=](mediator_peer_id, actor_id remote_mediator_id) {
                 self->send(answer_to, discovered_atom::value, node, who, local_proxy);
                 self->quit();
+            },
+            //TODO: handle down/exit
+            [=](CAF_TCP::failed, CAF_TCP::do_write, int code) {
+                aout(self) << "Discoverer failed to write, quit" << endl;
+                self->send(answer_to, discover_failed_atom::value, node, who);
+                self->quit();
             }
-            //TODO: handle errors
+            //TODO: handle more errors
         };
     }
 
@@ -344,13 +382,18 @@ namespace remoting {
                 self->send(connection, CAF_TCP::do_write::value, protocol::message{protocol::handshake, uint16_t(self_name.size()), self_name}.to_buffer());
             },
             [=](CAF_TCP::sended, size_t length, CAF_TCP::connection connection) {
-                self->become(discoverer(self, connection, node, who, answer_to));
                 //create multiplexer
                 self->spawn(income_messages_multiplexer, connection, rem);
+
+                self->become(discoverer(self, connection, node, who, answer_to));
                 //send message to remoting to add new name <-> connection 
                 self->send(rem, add_new_connection::value, node, connection);
+            },
+            [=](CAF_TCP::failed, CAF_TCP::connect_atom, int code) {
+                //TODO: add reason message
+                self->send(answer_to, discover_failed_atom::value, node, who);
             }
-            //TODO: handle errors!
+            //TODO: handle more errors!
         };
     }
 
@@ -361,6 +404,17 @@ namespace remoting {
         //create income server
 
         self->send(tcp_actor, CAF_TCP::bind_atom::value, port);
+        
+        self->set_down_handler([=](down_msg& dmsg) {
+            for (auto& c : self->state.nodes) {
+                if (c.second == dmsg.source) {
+                    self->state.nodes.erase(c.first);
+                    aout(self) << "Node " << self_name << " disconnected from " << c.first << endl;
+                    self->demonitor(dmsg.source);
+                    break;
+                }
+            }
+        });
 
         return{
             //TODO: extract to find only reaction
@@ -379,8 +433,10 @@ namespace remoting {
                 }
             },
             [=](add_new_connection, node_name const& name, CAF_TCP::connection connection) {
+                //TODO: distinguish inbound and outbound connections
                 aout(self) << "Node " << self_name << " connected to " << name <<endl;
                 self->state.nodes.insert({ name, connection });
+                self->monitor(connection);
             },
             [=](CAF_TCP::bound_atom) {
                 //create new connection handler

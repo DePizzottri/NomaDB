@@ -37,19 +37,6 @@ namespace CAF_TCP {
     //    return f(meta::type_name("baerrorcode"), val, cat);
     //}
 
-
-    //struct config : actor_system_config {
-    //    config() {
-    //        //add_message_type<boost::system::error_code>("baerrorcode");
-    //        opt_group{ custom_options_, "global" }
-    //            .add(port, "port,p", "tcp port")
-    //            .add(host, "host,H", "set node");
-    //    }
-
-    //    uint16_t port = 0;
-    //    std::string host = "localhost";
-    //};
-
     using run_atom = atom_constant<atom("run")>;
     using stop = atom_constant<atom("stop")>;
 

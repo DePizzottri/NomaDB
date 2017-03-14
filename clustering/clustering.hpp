@@ -24,7 +24,7 @@ namespace clustering {
 
     using AddressAWORSet = aworset<full_address>;
 
-    struct config : caf::actor_system_config {
+    struct config : virtual caf::actor_system_config {
         explicit config();
 
         uint16_t port = 6666;

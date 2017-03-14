@@ -102,7 +102,7 @@ namespace clustering {
         message_handler gossip_receive =
         [=](gossip, AddressAWORSet their_members) {
             //self->state.addresses[from] = make_pair(host, port);
-            //aout(self) << "Gossip received from " << self->current_sender() << endl;//<< " " << their_members << endl;
+            aout(self) << "Gossip received from " << self->current_sender() << endl;//<< " " << their_members << endl;
             auto cfg = dynamic_cast<const config*> (&self->system().config());
 
             self->send(self, merge_members::value, their_members);
@@ -122,6 +122,7 @@ namespace clustering {
         auto cfg = dynamic_cast<const config*> (&self->system().config());
 
         self->set_down_handler([=](down_msg& dmsg) {
+            //TODO: maybe boost.multyindex?
             for (auto& c : self->state.connected) {
                 if (c.second == dmsg.source) {
                     self->state.connected.erase(c.first);
@@ -130,9 +131,9 @@ namespace clustering {
             }
         });
 
-        self->attach_functor([=](const error& reason) {
-            cout << "GSW exited: " << to_string(reason) << endl;
-        });
+        //self->attach_functor([=](const error& reason) {
+        //    cout << "GSW exited: " << to_string(reason) << endl;
+        //});
         
         //TODO: bug here
         auto wait_discovered_behavior = [self, member_manager](full_address const& address_gossip_to, AddressAWORSet const& members) -> behavior {
@@ -142,16 +143,24 @@ namespace clustering {
                     self->monitor(local_proxy);
 
                     self->anon_send(local_proxy, gossip::value, members);
-                    //aout(self) << "Gossip sended to " << local_proxy << endl;
+                    //aout(self) << "Discovered gossip sended to " << local_proxy << endl;
                     self->delayed_send(member_manager, tick_time, tick_atom::value);
                     self->unbecome();
 
                 },
+                [=](::remoting::discover_failed_atom, remoting::node_name node, remoting::actor_name act) {
+                    aout(self) << "Remoting: node failed to discover " << address_gossip_to << endl;
+                    self->delayed_send(member_manager, tick_time, tick_atom::value);
+                    self->unbecome();
+                }
+                //TODO: timeouts!    
+                /*,
                 after(tick_time) >> [=] {
                     aout(self) << "Node discover timeout " << address_gossip_to << endl;
                     self->delayed_send(member_manager, tick_time, tick_atom::value);
                     self->unbecome();
-                }
+                }*/
+                //TODO: handle more errors
             };
         };
 
@@ -170,7 +179,7 @@ namespace clustering {
 
                     if (igossip_to != self->state.connected.end()) {
                         self->anon_send(igossip_to->second, gossip::value, members);
-                        //aout(self) << "Gossip sended to " << igossip_to->second << endl;
+                        //aout(self) << "Node gossip sended to " << igossip_to->second << endl;
                         self->delayed_send(member_manager, tick_time, tick_atom::value);
                     }
                     else {
@@ -196,7 +205,7 @@ namespace clustering {
 
                         if (igossip_to != self->state.connected.end()) {
                             self->anon_send(igossip_to->second, gossip::value, members);
-                            //aout(self) << "Gossip sended to " << igossip_to->second << endl;
+                            //aout(self) << "Seed gossip sended to " << igossip_to->second << endl;
                             self->delayed_send(member_manager, tick_time, tick_atom::value);
                         }
                         else {
