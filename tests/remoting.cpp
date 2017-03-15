@@ -141,3 +141,8 @@ BOOST_AUTO_TEST_CASE(remoting_send_to_remote)
     anon_send(tcp1, CAF_TCP::stop::value);
     anon_send(tcp2, CAF_TCP::stop::value);
 }
+
+//ensure connection_establisher/discoverer close afer finish and fail
+
+
+//enshure income_messages_multiplexer/proxy/meditor close after finish/fail

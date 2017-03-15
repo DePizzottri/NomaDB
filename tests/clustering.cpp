@@ -61,3 +61,5 @@ BOOST_AUTO_TEST_CASE(clustering_connect_to_from_seed)
     anon_send(cluster_seed, clustering::stop_atom::value);
     anon_send(cluster_node, clustering::stop_atom::value);
 }
+
+//ensure gossip sender worker quot after finish
