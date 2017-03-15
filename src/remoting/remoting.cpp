@@ -1,6 +1,11 @@
 #include <remoting.hpp>
 
 namespace remoting {
+
+    std::string make_remote_name(actor_name const& actor_name, node_name const& node) {
+        return "_remote:" + node + ":" + actor_name;
+    }
+
     bool address::operator==(address const& other) const {
         return other.host == host && other.port == port;
     }
@@ -363,6 +368,12 @@ namespace remoting {
         //prepare proxy discover message
         //auto local_proxy = self->spawn<linked>(half_proxy, connection); //TODO: test down cases
         auto local_proxy = self->spawn(half_proxy, connection, self); //TODO: test down cases
+        //TODO: maybe make remoting actor as register?
+        self->system().registry().put(make_remote_name(who, node), actor_cast<strong_actor_ptr> (local_proxy));
+
+        actor_cast<strong_actor_ptr> (local_proxy)->get()->attach_functor([=, & system = self->system()] {
+            system.registry().erase(make_remote_name(who, node));
+        });
                                                                       //prepare discover message
         auto ee = envelope{ local_proxy.id(), make_message(who) }.to_message(protocol::discover, self->system());
         if (!ee) {
@@ -450,6 +461,15 @@ namespace remoting {
         return{
             //TODO: extract to find only reaction
             [=](discover_atom, actor_name const& actor_name, node_name const& node, address const& addr) {
+                //TODO: maybe make remoting actor as register?
+                //try to find remote actor proxy
+                auto proxy = self->system().registry().get(make_remote_name(actor_name, node));
+
+                if (proxy) {
+                    self->anon_send(actor_cast<actor> (self->current_sender()), discovered_atom::value, node, actor_name, actor_cast<actor>(proxy));
+                    return;
+                }
+                
                 //find_or_create connection
                 auto iconn = self->state.nodes.find(node);
 

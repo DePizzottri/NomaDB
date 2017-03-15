@@ -100,7 +100,7 @@ namespace remoting {
         remoting const& rem,
         actor answer_to);
     
-
+    //TODO: may be more then one connection to one node, because of parallel discovering
     remoting::behavior_type make_remoting(remoting::stateful_pointer<remoting_state> self, CAF_TCP::worker tcp_actor, uint16_t port, node_name const& self_name);
 
     //TODO: stop remoting

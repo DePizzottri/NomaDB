@@ -46,12 +46,19 @@ behavior replicator_actor(event_based_actor* self, string const& name, actor dat
     //TODO: GATHER pattern
     auto sync_send_beh = [=](event_based_actor* self, AWORSet const& raw_data) -> message_handler {
         //TODO: error handling
-        return [=](remoting::discovered_atom, remoting::node_name node, remoting::actor_name actor_name, actor proxy) {
-            self->anon_send(proxy, sync::value, raw_data);
-            //tick again
-            self->unbecome();
-            self->unbecome();
-            self->delayed_send(self, tick_interval, repl_tick::value);
+        return{
+            [=](remoting::discovered_atom, remoting::node_name node, remoting::actor_name actor_name, actor proxy) {
+                self->anon_send(proxy, sync::value, raw_data);
+                //tick again
+                self->unbecome();
+                self->unbecome();
+                self->delayed_send(self, tick_interval, repl_tick::value);
+            },
+            [=](remoting::discover_failed_atom, remoting::node_name node, remoting::actor_name actor_name) {
+                self->unbecome();
+                self->unbecome();
+                self->delayed_send(self, tick_interval, repl_tick::value);
+            }
         };
     };
 
