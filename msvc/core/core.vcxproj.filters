@@ -23,6 +23,12 @@
     <ClInclude Include="..\..\core\AWORSetActor.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\core\key_manager.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\CRDTCell.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\utils.cpp">
@@ -32,6 +38,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\AWORSetActor.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\key_manager.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

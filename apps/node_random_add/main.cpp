@@ -21,13 +21,13 @@ behavior cluster_client(event_based_actor* self, vector<actor> aworses) {
             aout(self) << "============================" << endl;
         },
         [=](tick_atom) {
-            self->send(utils::choose_random(aworses), add_elem::value, utils::get_rand(numeric_limits<int>::min(), numeric_limits<int>::max()));
+            self->send(utils::choose_random(aworses), core::add_elem::value, utils::get_rand(numeric_limits<int>::min(), numeric_limits<int>::max()));
             self->delayed_send(self, chrono::seconds(1), tick_atom::value);
         }
     };
 }
 
-struct config: replicator_config, clustering::config {};
+struct config: core::replicator_config, clustering::config {};
 
 void caf_main(actor_system& system, const config& cfg) {
     auto tcp = CAF_TCP::start(system, 4);
@@ -40,7 +40,7 @@ void caf_main(actor_system& system, const config& cfg) {
     vector<actor> aworses;
     
     for (int i = 0; i < SIZE; ++i) {
-        aworses.emplace_back(spawn_intaworset(system, "awors" + std::to_string(i), cluster_member, cfg.name, remoting, chrono::seconds(1)));
+        aworses.emplace_back(core::spawn_intaworset(system, "awors" + std::to_string(i), cluster_member, cfg.name, remoting, chrono::seconds(1)));
     }
 
     auto client = system.spawn(cluster_client, aworses);
