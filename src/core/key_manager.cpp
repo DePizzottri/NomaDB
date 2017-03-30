@@ -19,6 +19,7 @@ namespace core {
     using namespace multi_index;    
 
     key_manager_config::key_manager_config() {
+		add_message_type<key_manager_state::AWORSet>("kmsAwors");
         opt_group{ custom_options_, "global" }
         .add(defaultSyncIntervalMillis, "defSyncInt,dsi", "set sefault sync interval");
     }
