@@ -37,7 +37,7 @@ namespace core {
         });
 
         message_handler syncer = [=](sync, BackendDataType const& other) { //3%
-            self->send(data_backend, update_atom::value, other);
+            self->send(data_backend, merge_data::value, other);
         };
 
         self->delayed_send(self, tick_interval, repl_tick::value);
@@ -85,19 +85,19 @@ namespace core {
 
         message_handler replic_beh = {
             [=](repl_tick) {
-            //aout(self) << "Replicator tick" << endl;
-            //get data from backend
-            self->send(cluster_member, clustering::get_members::value);
-        },
-        [=](clustering::cluster_members, clustering::AddressAWORSet const& addresses) {
-            //TODO: gather pattern
-            self->become(keep_behavior, sync_discover_beh(self, addresses).or_else(syncer));
-            self->send(data_backend, get_raw_data::value);
-        },
-        [=](crdt_name) {
-            self->delegate(data_backend, crdt_name::value);
-        }
-        };
+				//aout(self) << "Replicator tick" << endl;
+				//get data from backend
+				self->send(cluster_member, clustering::get_members::value);
+			},
+			[=](clustering::cluster_members, clustering::AddressAWORSet const& addresses) {
+				//TODO: gather pattern
+				self->become(keep_behavior, sync_discover_beh(self, addresses).or_else(syncer));
+				self->send(data_backend, get_raw_data::value);
+			},
+			[=](crdt_name) {
+				self->delegate(data_backend, crdt_name::value);
+			}
+		};
 
         return replic_beh.or_else(syncer);
     }

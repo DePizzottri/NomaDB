@@ -30,7 +30,7 @@ namespace core {
                 self->state.set.rmv(data);
                 //aout(self) << "Rem " << name <<" "<< data << endl;
             },
-            [=](update_atom, AWORSet const& other) { //5.6%
+            [=](merge_data, AWORSet const& other) { //5.6%
                 self->state.set.join(other);
                 //aout(self) << "Merge " << name << self->state.set.read() << endl;
                 //aout(self) << "Merge " << name << " count: " << self->state.set.read().size() << endl;
