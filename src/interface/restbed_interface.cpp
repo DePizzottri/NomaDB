@@ -15,6 +15,11 @@ namespace interface {
 	using start_atom = atom_constant<atom("istart")>;
 	using stop_rest_atom = atom_constant<atom("irstop")>;
 
+	config::config() {
+		opt_group{ custom_options_, "global" }
+		.add(http_port, "http_port,hp", "set HTTP port");
+	}
+
 	namespace {
 		core::data_type to_data_type(string const& data) {
 			return std::atoi(data.c_str());
@@ -22,14 +27,16 @@ namespace interface {
 	};
 
 	behavior restbed_service_worker(event_based_actor* self, shared_ptr<restbed::Service> service) {
+		auto cfg = dynamic_cast<const config*> (&self->system().config());
+
 		auto settings = make_shared< Settings >();
-		settings->set_port(14741);
+		settings->set_port(cfg->http_port);
 		settings->set_worker_limit(2);
 		settings->set_default_header("Connection", "keep-alive");
 
 		return {
 			[=](start_atom) {
-				service->start();
+				service->start(settings);
 				self->quit();
 			}
 		};

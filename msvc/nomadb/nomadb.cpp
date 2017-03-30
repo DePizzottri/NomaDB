@@ -4,7 +4,7 @@
 #include <key_manager.hpp>
 #include <rest/restbed_interface.hpp>
 
-struct config : core::replicator_config, clustering::config, core::key_manager_config {};
+struct config : core::replicator_config, clustering::config, core::key_manager_config, interface::config {};
 
 void caf_main(actor_system& system, const config& cfg) {
 	//start networking
