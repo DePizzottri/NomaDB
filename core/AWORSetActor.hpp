@@ -10,6 +10,7 @@ namespace core {
     using namespace std;
 
     using crdt_name = atom_constant<atom("crdtname")>;
+	using contains_atom = atom_constant<atom("caworcont")>;
 
     using data_type = int;
     using set_type = set<data_type>;
