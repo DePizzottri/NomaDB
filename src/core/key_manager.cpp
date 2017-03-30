@@ -5,6 +5,13 @@
 #include <replicator.hpp>
 #include <CRDTCell.hpp>
 
+namespace boost {
+	std::size_t hash_value(caf::actor const& act) {
+		std::hash<caf::actor> h;
+		return h(act);
+	}
+}
+
 namespace core {
 
     using namespace caf;
@@ -18,6 +25,11 @@ namespace core {
 
     behavior key_manager(caf::stateful_actor<key_manager_state>* self, actor const& cluster_member, string const& node_name, ::remoting::remoting rem) {
         auto cfg = dynamic_cast<const key_manager_config*> (&self->system().config());
+
+		if (!cfg) {
+			aout(self) << "Core: key manager cant get config" << endl;
+			return{};
+		}
 
         //TODO: check multi index performance
         self->set_down_handler([=](down_msg const& dmsg)  {

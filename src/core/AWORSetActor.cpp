@@ -15,6 +15,12 @@ namespace core {
 
 		self->system().registry().put(name, actor_cast<strong_actor_ptr> (self));
 
+		self->attach_functor(
+			[=](const error& reason) {
+				self->system().registry().erase(name);
+			}
+		);
+
         return {
             [=](add_elem, data_type data) {
                 self->state.set.add(data);

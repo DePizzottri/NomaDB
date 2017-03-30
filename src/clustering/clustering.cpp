@@ -117,7 +117,7 @@ namespace clustering {
         message_handler gossip_receive =
         [=](gossip, AddressAWORSet their_members) {
             //self->state.addresses[from] = make_pair(host, port);
-            aout(self) << "Gossip received from " << self->current_sender() << endl;//<< " " << their_members << endl;
+            //aout(self) << "Gossip received from " << self->current_sender() << endl;//<< " " << their_members << endl;
             auto cfg = dynamic_cast<const config*> (&self->system().config());
 
             self->send(self, merge_members::value, their_members);

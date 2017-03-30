@@ -12,10 +12,7 @@
 
 //workaround for boost::multi_index
 namespace boost {
-    std::size_t hash_value(caf::actor const& act) {
-        std::hash<caf::actor> h;
-        return h(act);
-    }
+	std::size_t hash_value(caf::actor const& act);
 }
 
 namespace core {
@@ -51,5 +48,5 @@ namespace core {
     //TODO: actor registry pattern
     caf::behavior key_manager(caf::stateful_actor<key_manager_state>* self, caf::actor const& cluster_member, string const& node_name, ::remoting::remoting rem);
 
-    caf::actor spawn_key_manager(caf::actor_system& system, string const& name, caf::actor cluster_member, string const& node_name, ::remoting::remoting rem, chrono::milliseconds tick_interval);
+	caf::actor spawn_key_manager(caf::actor_system& system, caf::actor cluster_member, string const& node_name, ::remoting::remoting rem, chrono::milliseconds tick_interval);
 }

@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CAFCoreInclude);../../interface;D:/lib/restbed/source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CAFCoreInclude);../../interface;../../core;../../libs/delta-enabled-crdts;D:/lib/restbed/source</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -129,7 +129,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CAFCoreInclude);../../interface;D:/lib/restbed/source</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CAFCoreInclude);../../interface;../../core;../../libs/delta-enabled-crdts;D:/lib/restbed/source</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -65,7 +65,7 @@ namespace core {
             return{
                 [=](BackendDataType const& raw_data) {
                     if (addresses.read().size() < 2) {
-                        aout(self) << "No peer to sync found" << endl;
+                        //aout(self) << "Replicator: " << replicator_name(name) << " no peer to sync found" << endl;
                         self->delayed_send(self, tick_interval, repl_tick::value);
                         self->unbecome();
                         return;
