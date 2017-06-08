@@ -44,7 +44,7 @@ install:
   - mkdir build
   - cd build
   - cmake %CMAKE_GENERATOR% -DCAF_NO_BENCHMARKS:BOOL=no -DCAF_NO_EXAMPLES:BOOL=no -DCAF_NO_MEM_MANAGEMENT:BOOL=yes ..
-  - msbuild CAF.sln
+  - msbuild CAF.sln /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM%
   - cd ../..
 
   #end
