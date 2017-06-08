@@ -19,8 +19,11 @@ configuration:
   - Release
 
 cache:
-  # - C:\lib
+  # cmake
   - C:\cmake-3.7.2-win32-x86
+  # CAF
+  - C:\lib\actor-framework\libcaf_core\caf
+  - C:\lib\actor-framework\build\lib\%CONFIGURATION%
 
 # prepare dependencies
 install:
@@ -39,13 +42,18 @@ install:
   - mkdir c:\lib
   - cd c:\lib
   # CAF
-  - git clone --branch 0.15.3 https://github.com/actor-framework/actor-framework.git
-  - cd actor-framework
-  - mkdir build
-  - cd build
-  - cmake %CMAKE_GENERATOR% -DCMAKE_GENERATOR_PLATFORM=%PLATFORM% -DCAF_NO_BENCHMARKS:BOOL=no -DCAF_NO_EXAMPLES:BOOL=no -DCAF_NO_MEM_MANAGEMENT:BOOL=yes ..
-  - msbuild CAF.sln /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM%
-  - cd ../..
+  - ps: |
+     if (![IO.File]::Exists("C:\lib\actor-framework\build\lib")) {
+       git clone --branch 0.15.3 https://github.com/actor-framework/actor-framework.git
+       cd actor-framework
+       mkdir build
+       cd build
+       cmake %CMAKE_GENERATOR% -DCMAKE_GENERATOR_PLATFORM=%PLATFORM% -DCAF_NO_BENCHMARKS:BOOL=no -DCAF_NO_EXAMPLES:BOOL=no -DCAF_NO_MEM_MANAGEMENT:BOOL=yes -DCAF_NO_IO:BOOL=yes -DCAF_NO_UNIT_TESTS:BOOL=yes ..
+       msbuild CAF.sln /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM%
+       cd ../..
+     }
+  - dir
+  # restbed
 
   #end
   - popd
