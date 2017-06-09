@@ -48,5 +48,6 @@ install:
 
   #end
   - popd
+  - echo "Done preparing dependencies"
   
 build: off  
