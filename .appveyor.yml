@@ -24,6 +24,7 @@ cache:
   # CAF
   - C:\lib\actor-framework\libcaf_core\caf
   - C:\lib\actor-framework\build\lib\%CONFIGURATION%
+  - C:\lib\restbed\build\%CONFIGURATION%
 
 # prepare dependencies
 install:
@@ -38,16 +39,16 @@ install:
   - call "%VSPATH%"\vcvarsall %PLATFORM%
   - set PATH=C:\cmake-3.7.2-win32-x86\bin;%PATH%;
   # prepare 
-  - pushd
   - mkdir c:\lib
   - cd c:\lib
   # CAF
   - call %APPVEYOR_BUILD_FOLDER%/ci/build_CAF.bat
   - dir
   # restbed
+  - call %APPVEYOR_BUILD_FOLDER%/ci/build_restbed.bat
 
   #end
-  - popd
+  # - popd
   - echo "Done preparing dependencies"
   
 build: off  
