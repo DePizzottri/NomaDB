@@ -1,5 +1,7 @@
 # Nomad DB
 
+<a href="https://ci.appveyor.com/project/DePizzottri/nomadb" target="_blank">![Build Status](https://img.shields.io/appveyor/ci/DePizzottri/nomadb/master.svg?label=windows)</a>
+
 Eventual consistent distributed key - data structure database based on CRDT
 
 Prototype: https://github.com/realnumber3012/NOMAzurDB
