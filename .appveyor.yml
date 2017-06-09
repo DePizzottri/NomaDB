@@ -42,7 +42,7 @@ install:
   - mkdir c:\lib
   - cd c:\lib
   # CAF
-  - call ./ci/build_CAF.bat
+  - call %APPVEYOR_BUILD_FOLDER%/ci/build_CAF.bat
   - dir
   # restbed
 
