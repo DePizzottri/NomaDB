@@ -1,4 +1,5 @@
-IF NOT EXISTS "C:/lib/actor-framework/build/lib" (
+@echo off
+IF NOT EXIST "C:/lib/actor-framework/build/lib" (
   git clone --branch 0.15.3 https://github.com/actor-framework/actor-framework.git
   cd actor-framework
   mkdir build
