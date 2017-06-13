@@ -7,7 +7,7 @@
     <BoostLib>C:/Libraries/boost_1_62_0/lib64-msvc-14.0</BoostLib>
     <CAFLibRelease>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibRelease>
     <CAFLibDebug>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibDebug>
-    <CAFCoreInclude>C:\lib\$(VS_SHORT_NAME)\actor-framework\libcaf_core\caf</CAFCoreInclude>
+    <CAFCoreInclude>C:\lib\$(VS_SHORT_NAME)\actor-framework\libcaf_core</CAFCoreInclude>
     <RestbedInclude>C:\lib\$(VS_SHORT_NAME)\restbed\source</RestbedInclude>
     <RestbedLib>C:\lib\$(VS_SHORT_NAME)\restbed\build\$(CONFIGURATION)</RestbedLib>
   </PropertyGroup>
