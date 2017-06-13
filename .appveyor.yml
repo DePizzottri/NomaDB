@@ -32,8 +32,10 @@ cache:
 # prepare dependencies
 install:
   # submodules
+  - pushd
   - cd C:\projects\nomadb
   - git submodule update --init --recursive 
+  - popd
   # cmake
   - ps: |
       if (![IO.File]::Exists("C:\cmake-3.7.2-win32-x86\bin\cmake.exe")) {
