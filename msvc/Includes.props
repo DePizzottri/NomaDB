@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets">
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <BoostInclude>C:/Libraries/boost_1_62_0</BoostInclude>
-    <BoostLib>C:/Libraries/boost_1_62_0/lib64-msvc-14.0</BoostLib>
+    <BoostInclude>$(BOOST_INCLUDE_DIR)</BoostInclude>
+    <BoostLib>$(BOOST_LIBRARY_DIR)</BoostLib>
     <CAFLibRelease>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibRelease>
     <CAFLibDebug>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibDebug>
     <CAFCoreInclude>C:\lib\$(VS_SHORT_NAME)\actor-framework\libcaf_core</CAFCoreInclude>
