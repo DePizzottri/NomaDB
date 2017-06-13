@@ -20,14 +20,14 @@ configuration:
   - Debug
   - Release
 
-cache:
+#cache:
   # cmake
-  - C:\cmake-3.7.2-win32-x86
+  #- C:\cmake-3.7.2-win32-x86
   # CAF
-  - C:\lib\%VS_SHORT_NAME%\actor-framework\libcaf_core\caf
-  - C:\lib\%VS_SHORT_NAME%\actor-framework\build\lib\%CONFIGURATION%
-  - C:\lib\%VS_SHORT_NAME%\restbed\source
-  - C:\lib\%VS_SHORT_NAME%\restbed\build\%CONFIGURATION%
+  #- C:\lib\%VS_SHORT_NAME%\actor-framework\libcaf_core\caf
+  #- C:\lib\%VS_SHORT_NAME%\actor-framework\build\lib\%CONFIGURATION%
+  #- C:\lib\%VS_SHORT_NAME%\restbed\source
+  #- C:\lib\%VS_SHORT_NAME%\restbed\build\%CONFIGURATION%
 
 # prepare dependencies
 install:
