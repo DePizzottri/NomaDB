@@ -1,5 +1,5 @@
 IF NOT EXIST "C:/lib/%VS_SHORT_NAME%/actor-framework/build/lib" (
-  git clone --branch 0.15.3 https://github.com/actor-framework/actor-framework.git
+  git clone https://github.com/DePizzottri/actor-framework.git
   cd actor-framework
   mkdir build
   cd build
