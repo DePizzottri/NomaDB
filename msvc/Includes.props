@@ -3,11 +3,13 @@
   <ImportGroup Label="PropertySheets">
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <BoostInclude>D:/lib/obsolete_boost_1_61_0</BoostInclude>
-    <BoostLib>C:/lib\obsolete_boost_1_61_0/build_x64/lib</BoostLib>
-    <CAFLibRelease>C:\lib\actor-framework\build_asio\lib\RelWithDebInfo</CAFLibRelease>
-    <CAFLibDebug>C:\lib\actor-framework\build_asio\lib\Debug</CAFLibDebug>
-    <CAFCoreInclude>C:/lib/actor-framework/libcaf_core</CAFCoreInclude>
+    <BoostInclude>C:/Libraries/boost_1_62_0</BoostInclude>
+    <BoostLib>C:/Libraries/boost_1_62_0/lib64-msvc-14.0</BoostLib>
+    <CAFLibRelease>C:\lib\%VS_SHORT_NAME%\actor-framework\build\lib\%CONFIGURATION%</CAFLibRelease>
+    <CAFLibDebug>C:\lib\%VS_SHORT_NAME%\actor-framework\build\lib\%CONFIGURATION%</CAFLibDebug>
+    <CAFCoreInclude>C:\lib\%VS_SHORT_NAME%\actor-framework\libcaf_core\caf</CAFCoreInclude>
+    <RestbedInclude>C:\lib\%VS_SHORT_NAME%\restbed\source</RestbedInclude>
+    <RestbedLib>C:\lib\%VS_SHORT_NAME%\restbed\build\%CONFIGURATION%</RestbedLib>
   </PropertyGroup>
   <ItemGroup>
     <BuildMacro Include="BoostInclude">
@@ -22,8 +24,11 @@
     <BuildMacro Include="CAFLibDebug">
       <Value>$(CAFLibDebug)</Value>
     </BuildMacro>
-    <BuildMacro Include="CAFCoreInclude">
-      <Value>$(CAFCoreInclude)</Value>
+    <BuildMacro Include="RestbedInclude">
+      <Value>$(RestbedInclude)</Value>
+    </BuildMacro>
+    <BuildMacro Include="RestbedLib">
+      <Value>$(RestbedLib)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
