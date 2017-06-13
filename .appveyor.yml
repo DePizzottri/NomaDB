@@ -13,7 +13,7 @@ environment:
   - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
     VSPATH: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build
     BS: cmake
-    CMAKE_GENERATOR: '"Visual Studio 15 2017"'
+    CMAKE_GENERATOR: '"Visual Studio 15"'
     VS_SHORT_NAME: vs15
     BOOST_INCLUDE_DIR: C:/Libraries/boost_1_64_0
     BOOST_LIBRARY_DIR: C:/Libraries/boost_1_64_0/lib64-msvc-15.0    
