@@ -32,6 +32,7 @@ cache:
 # prepare dependencies
 install:
   # submodules
+  - cd C:\projects\nomadb
   - git submodule update --init --recursive 
   # cmake
   - ps: |
@@ -44,8 +45,8 @@ install:
   - call "%VSPATH%"\vcvarsall %PLATFORM%
   - set PATH=C:\cmake-3.7.2-win32-x86\bin;%PATH%;
   # prepare 
-  - if not exist c:\lib\%VS_SHORT_NAME% (mkdir c:\lib\%VS_SHORT_NAME%)
-  - cd c:\lib\%VS_SHORT_NAME%
+  - if not exist C:\lib\%VS_SHORT_NAME% (mkdir C:\lib\%VS_SHORT_NAME%)
+  - cd C:\lib\%VS_SHORT_NAME%
   # CAF
   - call %APPVEYOR_BUILD_FOLDER%/ci/build_CAF.bat
   # restbed
