@@ -1,4 +1,4 @@
-IF NOT EXIST C:/lib/restbed/build/%CONFIGURATION% (
+IF NOT EXIST C:/lib/%VS_SHORT_NAME%/restbed/build/%CONFIGURATION% (
   git clone  --recursive --branch 4.5 https://github.com/Corvusoft/restbed.git
   cd restbed
   mkdir build
