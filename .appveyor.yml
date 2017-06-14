@@ -60,6 +60,7 @@ install:
   - echo "Done preparing dependencies"
 
 build_script:
-  - msbuild "%APPVEYOR_BUILD_FOLDER%\msvc\NomaDB.sln" /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "%APPVEYOR_BUILD_FOLDER%/msvc/NomaDB.sln" /p:Configuration=%CONFIGURATION% /p:Platform=%PLATFORM% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+
 test_script:
   - %APPVEYOR_BUILD_FOLDER%\msvc\%PLATFORM%\%CONFIGURATION%\test.exe
