@@ -3,13 +3,13 @@
   <ImportGroup Label="PropertySheets">
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <BoostInclude>$(BOOST_INCLUDE_DIR)</BoostInclude>
-    <BoostLib>$(BOOST_LIBRARY_DIR)</BoostLib>
-    <CAFLibRelease>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibRelease>
-    <CAFLibDebug>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION)</CAFLibDebug>
+    <BoostInclude>$(BOOST_INCLUDE_DIR);C:/lib/boost_1_62_0</BoostInclude>
+    <BoostLib>$(BOOST_LIBRARY_DIR);C:/lib/boost_1_62_0/stage_x64/lib</BoostLib>
+    <CAFLibRelease>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION);C:\lib\vs14\actor-framework\build\lib\RelWithDebInfo</CAFLibRelease>
+    <CAFLibDebug>C:\lib\$(VS_SHORT_NAME)\actor-framework\build\lib\$(CONFIGURATION);C:\lib\vs14\actor-framework\build\lib\Debug</CAFLibDebug>
     <CAFCoreInclude>C:\lib\$(VS_SHORT_NAME)\actor-framework\libcaf_core</CAFCoreInclude>
-    <RestbedInclude>C:\lib\$(VS_SHORT_NAME)\restbed\source</RestbedInclude>
-    <RestbedLib>C:\lib\$(VS_SHORT_NAME)\restbed\build\$(CONFIGURATION)</RestbedLib>
+    <RestbedInclude>C:\lib\$(VS_SHORT_NAME)\restbed\source;C:\lib\vs14\restbed\source</RestbedInclude>
+    <RestbedLib>C:\lib\$(VS_SHORT_NAME)\restbed\build\$(CONFIGURATION);C:\lib\vs14\restbed\build\Release</RestbedLib>
   </PropertyGroup>
   <ItemGroup>
     <BuildMacro Include="BoostInclude">
