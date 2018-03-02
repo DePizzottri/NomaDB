@@ -37,6 +37,7 @@ cache:
 install:
   # submodules
   # - git clone https://github.com/DePizzottri/delta-enabled-crdts.git C:\projects\nomadb\libs\delta-enabled-crdts
+  - git submodule update --init --recursive
   # cmake
   #- ps: |
   #    if (![IO.File]::Exists("C:\cmake-3.8.2-win64-x64\bin\cmake.exe")) {
