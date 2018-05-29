@@ -1,4 +1,5 @@
-﻿План статей:
+﻿
+План статей:
     Поиск и изучение посетов размерности 2, возникающих при синхронизациях параллельных процессов.
     Выявление паттернов.
     Генерация определителей П/С связей ("часов").
@@ -206,7 +207,7 @@
 
 Эмпирические исследования по анализу размерностей посетов, образующихся реальными распределенными системами показывают, что в действительности размерности таких посетов на порядки меньше максимально возможного значения. В частности стандарный пример посета "корона" S(0, n), имеющий размерность n, если рассматривать его в контексте взаимодействующих процессов, являет собой атомарную широковещательную рассылку сообщений и, одновременный же, широковещательный прием этих сообщений. Появление такой фигуры крайне необычно на практике, хотя формально не нарушает приведенную модель.
 
-В работе [[20]](https://ieeexplore.ieee.org/document/797397/) дана приближенная оценка реального значения размерности большого числа распределенных систем, на основании которых можно заключить что в действительности размерность посетов гораздо меньше теоретической оценки. Например для 1500+ процессов размерность была 10. В дальнейшем авторами были предприняты попыки [ссылки] генерации часов на основе жадного построения реалайзера, размер которого гораздо меньше векторных часов, которые могли бы быть применины. К сожалению, работа не была доведена до логического конца, а кроме того такой подход требовал глобального видения (в отличии от векторов версий).
+В работе [[20]](https://ieeexplore.ieee.org/document/797397/) дана приближенная оценка реального значения размерности большого числа распределенных систем, на основании которых можно заключить что в действительности размерность посетов гораздо меньше теоретической оценки. Например для 1500+ процессов размерность была 10. В дальнейшем авторами были предприняты попыки [[21]](https://pdfs.semanticscholar.org/b4ed/53e58111737a6f4dfee98c15385c8b4aa1cf.pdf) [[22]](https://pdfs.semanticscholar.org/d0c2/401ea2440f983c878414414d55f0130f8197.pdf) генерации часов на основе жадного построения реалайзера, размер которого гораздо меньше векторных часов, которые могли бы быть применины. К сожалению, работа не была доведена до логического конца, а кроме того такой подход требовал глобального видения (в отличии от векторов версий).
 
 Из подобных исследований можно сделать вывод что причинностные связи в реальных распределенных системах могут отслеживаться струкурами данных, занимающих гораздо меньше места, чем размерность образуемого посета. 
 
@@ -389,4 +390,6 @@ count(N) == N+1, если N нечетно
  18. Stefan Felsner, William T. Trotter. Dimension, Graph and Hypergraph Coloring. June 2000, Volume  17, pp 167–177
  19. Douglas Parker, Gerald Popek, Gerard Rudisin, Allen Stoughton, Bruce Walker, Evelyn Walton, Johanna Chow, David Edwards, Stephen Kiser, and [Charles Kline](https://en.wikipedia.org/w/index.php?title=Charles_S._Kline&action=edit&redlink=1 "Charles S. Kline (page does not exist)"). Detection of mutual inconsistency in distributed systems. Transactions on Software Engineering. 1983
  20. P.A.S. Ward. # An offline algorithm for dimension-bound analysis. Parallel Processing, 1999. Proceedings. 1999 International Conference on. 24-24 Sept. 1999
- 21. 
+ 21. Paul A. S. Ward. A framework algorithm for dynamic, centralized dimension-bounded timestamps. Proceeding CASCON '00 Proceedings of the 2000 conference of the Centre for Advanced Studies on Collaborative research Page 14
+ 22. Paul A.S. Ward, David J. Taylor. A Hierarchical Cluster Algorithm for Dynamic, Centralized Timestamps. Proceeding ICDCS '01 Proceedings of the The 21st International Conference on Distributed Computing Systems, Page 585.
+ 23. 
