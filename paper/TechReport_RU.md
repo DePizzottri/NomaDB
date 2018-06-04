@@ -1,10 +1,12 @@
-﻿# I. В поисках оптимального алгоритма антиэнтропии для δ-CmRDT. Рабочий отчет.
+﻿
+# I. В поисках оптимального алгоритма антиэнтропии для δ-CmRDT. Рабочий отчет.
 # II. В поисках оптимального способа отслеживания причинностных связей в данных. Рабочий отчет.
 
 ### Абстракт.
 
 Попытка решить проблему потребления памяти для механизмов отслеживания причинно-следственных связей. Изучаются минимальные по потреблению памяти способы отслеживания причинности для реплицированных данных в распределенных системах.
-Изучаются схемы синхронизаций, образующие посеты размерности 2.
+Изучаются схемы синхронизаций, образующие посеты размерности 2. Описан алгоритм.
+Найдены и представлены некоторые частные и общие схемы, при которых есть возможность построить требуемые механизмы.
     
 ## Описание проблемы, актулаизация.
 
@@ -447,4 +449,3 @@ count(N) == N+1, если N нечетно
  23. Shapiro, Marc; Preguiça, Nuno; Baquero, Carlos; Zawirski, Marek (13 January 2011). "A Comprehensive Study of Convergent and Commutative Replicated Data Types". _RR-7506_. HAL - Inria.
  24. Vitor Enes, Carlos Baquero, Paulo Sérgio Almeida, Ali Shoker. Join Decompositions for Efficient Synchronization of CRDTs after a Network Partition: Work in progress report. Proceeding [PMLDC '16](http://2016.ecoop.org/track/PMLDC-2016 "Conference Website")  First Workshop on Programming Models and Languages for Distributed Computing, Article No. 6.
  25. On-Line Encyclopedia of Integer Sequences, A151024. https://oeis.org/A151024
-
