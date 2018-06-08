@@ -89,9 +89,9 @@ So the hyperedges of H(P) is that minimal sets S of incomparable pairs, which ca
 **Chromatic number χ(H)** of (hyper)graph H is the smallest number k of colors needed to color H.
 
 For that graphs and hypergraphs incompatible and critical pairs it is true that:
-dim(P) == χ(H) == χ(H<sub>c</sub>) ⩾ χ(G) == χ(G<sub>c</sub>).
+**dim(P) == χ(H) == χ(H<sub>c</sub>) ⩾ χ(G) == χ(G<sub>c</sub>)**.
 
-**Theoren (Felsner, Trotter)**:
+**Theorem (_Felsner_, _Trotter_)**:
 If graph G<sub>c</sub>(P) is a graph of incomparabel critial pairs of poset P, which is not a linera order. Then the dimension of P is equal 2 if and only if χ(G) == 2 [[18]](https://link.springer.com/article/10.1023/A:1006429830221).
 
 ## Poset Model.
