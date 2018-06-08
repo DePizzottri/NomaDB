@@ -6,6 +6,37 @@ The approach to minimize memory consuption of data causality traching mechanism 
 
 ## Problem Description.
 
+With dramatically increasing of datastores load (the handling of huge amount of  read/write requests) there appears critical demand to migrate on another database acrhitectures systems, differrent from classical "client-server". [Amazon Dynamo](https://aws.amazon.com/dynamodb/)[26], [Cassandra](http://cassandra.apache.org/) and [Riak KV](http://basho.com/products/riak-kv/) are the best representatives of such databases. Its architecture is focused around _partition tolerance_, _read and write and availability_ and _eventual consistency_.
+
+Those systems lay in the area of heuristic CAP theorem [1](https://en.wikipedia.org/wiki/CAP_theorem), stated that among requirements of _consistency_, _availability_ and _partition tolerance_ only two can be achieved.
+
+Moreover there additional requirements as _massive replication_ appears. To achive the load distribution, decentralization and improvment of avalability and geo-distribution, data store systems became global. Under such conditions the easing of restrictions of cosistensy reqirements is inevitable: from _strong consistensy_ to [eventual consistency] (https://en.wikipedia.org/wiki/Eventual_consistency) [2][3].
+
+That systems follow the design, where data always can be written: copies of the same data (replicas) are allowed to be slightly diverge. However, depending on the method of synchronization there might conflicts arise, like occurrence of multiple concurrent copies or loss of updated data.
+
+In order to maintain consistency and replica syncronization ability there different data causality tracking mechinisms are exists. The most common and well-known is [Version Vector](https://en.wikipedia.org/wiki/Version_vector)[4][5], but its size has  asymptotycally lineary dependency function form number of replicas, and therefore can not be used in the massive replicated systems.
+
+A lot of alternatives have been created recently, partially solves the problem of memory consumptions, some of wich are version vector variations, others uses another approach.
+
+Among them we can be distinguished:
+
+* Dotted Version Vector[[6]](http://gsd.di.uminho.pt/members/vff/dotted-version-vectors-2012.pdf). Perhaps the most practical of all. It is based on the principle of distingushing a special subset of (server) nodes, that directly track causal inforamtion; and on the _dot_ concept, designed to distinguish the omissions in updates made on non-"server" nodes.
+
+* Hash Histories[[7]](http://oceanstore.cs.berkeley.edu/publications/papers/pdf/hh_icdcs03_kang.pdf). Completely stores the execution graph with the nodes containing the hash of the data. On the one hand it contains redundant inforamtion, on the other hand has the ability of detecting equal copies, happened to be so by accident.
+
+* Version stamps[[8]](http://haslab.uminho.pt/cbm/files/10.1.1.16.8235.pdf). Bases on principle of dynamic induction of identifiers for nodes, at the same time serving to distinguish concurrent events from dependent. The value of additional data depend asymptotically lineary form the count of updates and syncronizations.
+
+* These methods belongs to the _exact_, i.e. that who always correctly detects of causal reketion between two copies.
+
+* There are also inaccurate - for which it is not always possible to claim (or to calaim with probability less then one) that are the data is concurrent or causally dependent.
+
+* And there methods dependent on the network topology.
+
+It is also important to note the relationship between causality tracking and logical clocks. The first can be considered as a special case of logical clocks. Therefore, to some extent, the variants of such clocks can be considered in the present context [[9]](https://haslab.wordpress.com/2011/07/08/version-vectors-are-not-vector-clocks/).
+
+Among other things, the causality tracking mechanisms are used in the other fields of science, in particular sociology and social networks researches [[10]](https://arxiv.org/pdf/1304.4058.pdf). And disadvantages, in particular, version vector, are espasially strong.
+
+
 ## CRDT.
 
 ## Paper Scheme.
