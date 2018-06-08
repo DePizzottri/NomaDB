@@ -47,6 +47,52 @@ It is minimum number of chains, on which poset P can be partitioned.
 
 **Poset height** is the number of elements in the maximal chain. Formally
     X ∈ P where X is chain, for every Y ∈ P, where Y is chain and |X|>=|Y|, then |X| is height of the poset P.
+    
+**Realizer** of poset (P, →) is a family of linear extensions if their intersection results in original P poset.
+
+**Dimension of the poset** (P, →) is the size of the minimal possible realizer.
+
+The dimansion of the poset (P, →) always denoted by **dim(P)** [[15]](http://www.jstor.org/stable/2371374).
+
+**Theorem (_Hiraguti_)**:
+    The dimension of the poset P cant ba larger its width [16].
+
+**Critical pair** of poset elements (a, b) is an ordered pair, satisfying:
+
+* a and b are incomparable.
+* for every z ∈ P, if b→z then a→z
+* for every z ∈ P, if z→a then z→b
+
+As consequence: if (a, b) is critical pair, then the addition of a→b relation preserve partial order property of →.
+
+Linear extension L is **reversing** critial pair (a, b) if it is true that b→a in L.
+
+**Statement** Any nonempty family R of linear extensions is a realizer of poset (P, →) if and only if, for every critical pair (a, b) b→a for at least one linear order in R.
+
+**Theorem (_Yanakakkis_)** The problem of detection that poset is of dimension more then 2 is NP-hard[[17]](https://www.researchgate.net/publication/230596220_The_Complexity_of_the_Partial_Order_Dimension_Problem).
+
+As a consequence, there polynomial algorithm for detection that poset is of dimension excatly 2 is exists.
+
+**Hypergraph of incomparable pairs H(P)** associated with poset (P,  →) is a hypergraph, in that the vertices are the incomarable pairs in the poset P, and the edges are those sets S of incomparable pairs satisfying:
+
+* No linear extension L of P reverses all incomparable pairs is S.
+* If T is a proper subset of S (T ⊂ S), then there is a linear extension L of P wich reverses all incomparable pairs in T.
+
+So the hyperedges of H(P) is that minimal sets S of incomparable pairs, which cannot be reversed in the only one linear extension.
+
+**Graph of incomparable pairs G(P)** is the ordinary subgraph of H(P) consists only of ordinary 2-size edges.
+
+**Hypergraph of incomparable critical pairs H<sub>c</sub>(P)** is a subhypergraph of H(P), induced by critical pairs.
+
+**Graph of incomparable critical pairs G<sub>c</sub>(P)** is a ordinary subgraph of H<sub>c</sub>(P) with the only 2-size edges left.
+
+**Chromatic number χ(H)** of (hyper)graph H is the smallest number k of colors needed to color H.
+
+For that graphs and hypergraphs incompatible and critical pairs it is true that:
+dim(P) == χ(H) == χ(H<sub>c</sub>) ⩾ χ(G) == χ(G<sub>c</sub>).
+
+**Theoren (Felsner, Trotter)**:
+If graph G<sub>c</sub>(P) is a graph of incomparabel critial pairs of poset P, which is not a linera order. Then the dimension of P is equal 2 if and only if χ(G) == 2 [[18]](https://link.springer.com/article/10.1023/A:1006429830221).
 
 ## Poset Model.
 
