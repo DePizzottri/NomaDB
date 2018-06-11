@@ -10,11 +10,12 @@ With dramatically increasing of datastores load (the handling of huge amount of 
 
 Those systems lay in the area of heuristic CAP theorem [1](https://en.wikipedia.org/wiki/CAP_theorem), stated that among requirements of _consistency_, _availability_ and _partition tolerance_ only two can be achieved.
 
-Moreover there additional requirements as _massive replication_ appears. To achive the load distribution, decentralization and improvment of avalability and geo-distribution, data store systems became global. Under such conditions the easing of restrictions of cosistensy reqirements is inevitable: from _strong consistensy_ to [eventual consistency] (https://en.wikipedia.org/wiki/Eventual_consistency) [2][3].
+Moreover there additional requirements as _massive replication_ appears. To achive the load distribution, decentralization and improvment of avalability and geo-distribution, data store systems became global. Under such conditions the easing of restrictions of cosistensy reqirements is inevitable: from _strong consistensy_ to [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency) [2][3].
 
 That systems follow the design, where data always can be written: copies of the same data (replicas) are allowed to be slightly diverge. However, depending on the method of synchronization there might conflicts arise, like occurrence of multiple concurrent copies or loss of updated data.
 
 In order to maintain consistency and replica syncronization ability there different data causality tracking mechinisms are exists. The most common and well-known is [Version Vector](https://en.wikipedia.org/wiki/Version_vector)[4][5], but its size has  asymptotycally lineary dependency function form number of replicas, and therefore can not be used in the massive replicated systems.
+This interconnection is discussed in more detail below.
 
 A lot of alternatives have been created recently, partially solves the problem of memory consumptions, some of wich are version vector variations, others uses another approach.
 
@@ -36,8 +37,23 @@ It is also important to note the relationship between causality tracking and log
 
 Among other things, the causality tracking mechanisms are used in the other fields of science, in particular sociology and social networks researches [[10]](https://arxiv.org/pdf/1304.4058.pdf). And disadvantages, in particular, version vector, are espasially strong.
 
-
 ## CRDT.
+Based on the experience of distributed databases with master-master replication and generalizing the methods of data reconsilation in systems with non-strict data consistency there was introdused Confict Free Replicated Datatypes. Use of such structures guarantees strict-evetual consistency [3]. Among other things, CRDT in explicit forms already uses, or are going to use some moders databases: for example Microsoft Cosmos DB [[28]](https://docs.microsoft.com/en-us/azure/cosmos-db/multi-region-writers) and Redis [[27]](http://lp.redislabs.com/rs/915-NFD-128/images/WP-RedisLabs-Redis-Conflict-free-Replicated-Data-Types.pdf).
+
+There are two types of CRDT exists [[23]](https://hal.inria.fr/inria-00555588/document):
+* CmRDT - operations oriented CRDT (op-based CRDT, Commmutative RDT). Syncronization in that CRDT is perfomed by kind of atomic broadcast of update operations. Such operations must commute in order to converge to equal state for that structure.
+* СvRDT - state oriented (state-based CRDT, Convergent RDT). Syncronization in that CRDT is perfomed by state dissemination, wich is in turn merged in one by perfoming spesial operation. There is exist modification, δ-CRDT, performing replication by dissemination not only full state, but only the modified part.
+
+Each of type has its advandejes and disadvnantages:
++ CmRDT
+	+ **+** low traffic rate on opertaions broadcast
+	+ **-** requires atomic broadcast type of commutication
+	+ **-** dependent of curtain type requires cousal order of opertaions broadcast
+
++ δ-CvRDT
+	+ **+** gossip-based state dissemination protocol
+	+ **-** requires additional metainformation to track cousal relations
+	+ **-** traffic rate can be higher than for CmRDT
 
 ## Paper Scheme.
 
@@ -142,3 +158,32 @@ If graph G<sub>c</sub>(P) is a graph of incomparabel critial pairs of poset P, w
 ## Future Works
 
 ## Bibliography
+ 1.  _Brewer, Eric A._  [A Certain Freedom: Thoughts on the CAP Theorem](http://portal.acm.org/ft_gateway.cfm?id=1835701&type=pdf&CFID=25475815)  (англ.) // Proceeding of the XXIX ACM SIGACT-SIGOPS symposium on Principles of distributed computing. — N. Y.: [ACM](https://ru.wikipedia.org/wiki/ACM "ACM"), 2010. — Iss. 29. — No. 1. — P. 335—336.
+ 2. [Vogels, W.](https://en.wikipedia.org/wiki/Werner_Vogels "Werner Vogels")  (2009). "Eventually consistent".  _Communications of the ACM_.  **52**: 40.  [doi](https://en.wikipedia.org/wiki/Digital_object_identifier "Digital object identifier"):[10.1145/1435417.1435432](https://doi.org/10.1145%2F1435417.1435432).
+ 3. Saito, Yasushi; Shapiro, Marc (2005). "Optimistic replication". _[ACM Computing Surveys](https://en.wikipedia.org/wiki/ACM_Computing_Surveys "ACM Computing Surveys")_. **37** (1): 42–81. [doi](https://en.wikipedia.org/wiki/Digital_object_identifier "Digital object identifier"):[10.1145/1057977.1057980](https://doi.org/10.1145%2F1057977.1057980).
+ 4. Mattern, Friedman. (October 1988), "Virtual Time and Global States of Distributed Systems", in Cosnard, M., _Proc. Workshop on Parallel and Distributed Algorithms_, Chateau de Bonas, France: Elsevier, pp. 215–226
+ 5. Colin J. Fidge (February 1988). ["Timestamps in Message-Passing Systems That Preserve the Partial Ordering"](http://zoo.cs.yale.edu/classes/cs426/2012/lab/bib/fidge88timestamps.pdf)  (PDF). In K. Raymond (Ed.). _Proc. of the 11th Australian Computer Science Conference (ACSC'88)
+ 6. Nuno Preguiça, Carlos Baquero, Paulo Almeida, Victor Fonte and Ricardo Gonçalves. Brief Announcement: Efficient Causality Tracking in Distributed Storage Systems With Dotted Version Vectors. ACM PODC, pp. 335-336, 2012.
+ 7. ByungHoon Kang, Robert Wilensky, and John Kubiatowicz. The Hash History Approach for Reconciling Mutual Inconsistency. ICDCS, pp. 670-677, IEEE Computer Society, 2003.
+ 8. Paulo Almeida, Carlos Baquero and Victor Fonte. Version Stamps: Decentralized Version Vectors. ICDCS, pp. 544-551, 2002.
+ 9. https://haslab.wordpress.com/2011/07/08/version-vectors-are-not-vector-clocks/
+ 10. Lee, Conrad,  Nick, Bobo,  Brandes, Ulrik,  Cunningham, Pádraig : Link Prediction with Social Vector Clocks. In: Proceedings of the 19th ACM SIGKDD international conference on Knowledge discovery and data mining. ACM, 2013-08-14.
+ 11. Bernadette Charron-Bost. Concerning the size of logical clocks in distributed systems. Journal Information Processing Letters, Volume 39, Issue 1, July 12, 1991, Pages 11-16.
+ 12. Leslie Lamport . Time, clocks, and the ordering of events in a distributed system. Comm. ACM 21, 7 (July 1978), 558 - 565.
+ 13. Szpilrajn, E. (1930), ["Sur l'extension de l'ordre partiel"](http://matwbn.icm.edu.pl/tresc.php?wyd=1&tom=16), _[Fundamenta Mathematicae](https://en.wikipedia.org/wiki/Fundamenta_Mathematicae "Fundamenta Mathematicae")_, **16**: 386–389
+ 14. [Dilworth, Robert P.](https://en.wikipedia.org/wiki/Robert_P._Dilworth "Robert P. Dilworth") (1950), "A Decomposition Theorem for Partially Ordered Sets", _[Annals of Mathematics](https://en.wikipedia.org/wiki/Annals_of_Mathematics "Annals of Mathematics")_, **51** (1): 161–166
+ 15. Dushnik, Ben & Miller, E. W. (1941), "[Partially Ordered Sets](https://www.jstor.org/stable/2371374)", _[American Journal of Mathematics](https://ru.wikipedia.org/wiki/American_Journal_of_Mathematics "American Journal of Mathematics")_ Т. 63 (3): 600-610
+ 16. Tosio Hiragushi, On the dimension of orders, Tech. Rept., University of Kanazawa, 1955.
+ 17. Mihalis Yannakakis, The Complexity of the Partial Order Dimension Problem, [SIAM Journal on Algebraic and Discrete Methods](https://www.researchgate.net/journal/0196-5212_SIAM_Journal_on_Algebraic_and_Discrete_Methods)3(3):351-358 · September 1982
+ 18. Stefan Felsner, William T. Trotter. Dimension, Graph and Hypergraph Coloring. June 2000, Volume  17, pp 167–177
+ 19. Douglas Parker, Gerald Popek, Gerard Rudisin, Allen Stoughton, Bruce Walker, Evelyn Walton, Johanna Chow, David Edwards, Stephen Kiser, and [Charles Kline](https://en.wikipedia.org/w/index.php?title=Charles_S._Kline&action=edit&redlink=1 "Charles S. Kline (page does not exist)"). Detection of mutual inconsistency in distributed systems. Transactions on Software Engineering. 1983
+ 20. P.A.S. Ward. # An offline algorithm for dimension-bound analysis. Parallel Processing, 1999. Proceedings. 1999 International Conference on. 24-24 Sept. 1999
+ 21. Paul A. S. Ward. A framework algorithm for dynamic, centralized dimension-bounded timestamps. Proceeding CASCON '00 Proceedings of the 2000 conference of the Centre for Advanced Studies on Collaborative research Page 14
+ 22. Paul A.S. Ward, David J. Taylor. A Hierarchical Cluster Algorithm for Dynamic, Centralized Timestamps. Proceeding ICDCS '01 Proceedings of the The 21st International Conference on Distributed Computing Systems, Page 585. 
+ 23. Shapiro, Marc; Preguiça, Nuno; Baquero, Carlos; Zawirski, Marek (13 January 2011). "A Comprehensive Study of Convergent and Commutative Replicated Data Types". _RR-7506_. HAL - Inria.
+ 24. Vitor Enes, Carlos Baquero, Paulo Sérgio Almeida, Ali Shoker. Join Decompositions for Efficient Synchronization of CRDTs after a Network Partition: Work in progress report. Proceeding [PMLDC '16](http://2016.ecoop.org/track/PMLDC-2016 "Conference Website")  First Workshop on Programming Models and Languages for Distributed Computing, Article No. 6.
+ 25. On-Line Encyclopedia of Integer Sequences, A151024. https://oeis.org/A151024
+ 26. Giuseppe DeCandia, Deniz Hastorun, Madan Jampani, Gunavardhan Kakulapati, Avinash Lakshman, Alex Pilchin, Swaminathan Sivasubramanian, Peter Vosshall, and Werner Vogels. Dynamo: Amazon’s highly available key-value store. In Symp. on Op. Sys. Principles (SOSP), volume 41 of Operating Systems Review, pages 205–220, Stevenson, Washington, USA, October 2007. ACM
+ 27. Cihan Biyikoglu, Under the Hood: Redis CRDTs, WHITE PAPER, RedisLabs.
+ 28. https://docs.microsoft.com/en-us/azure/cosmos-db/multi-region-writers
+ 29. https://github.com/automerge/automerge/blob/6bed9b0650e9beacdf4ea2996dcea6fb07af55b5/README.md#caveats
