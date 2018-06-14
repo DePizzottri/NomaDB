@@ -54,6 +54,13 @@ Each of type has its advandejes and disadvnantages:
 	+ **+** gossip-based state dissemination protocol
 	+ **-** requires additional metainformation to track cousal relations
 	+ **-** traffic rate can be higher than for CmRDT
+    
+The main problem facing δ-CvRDT at the moment is minimisation of possible traffic. Partial solution is to reduce the amount of repeated transferring of data parts, wich is partly resolvet in the work [[24]](http://haslab.uminho.pt/cbm/files/pmldc-2016-join-decomposition.pdf). The other part is to reduce of directly transmitted data and metadata.
+
+Despite its universality both CRDT types are still poorly suited for _massive replicaton_, such that the number of replicas is of the order of tens or hundreds of thousands and even millions. In the case of δ-CvRDT, an important role is played by meta-information that tracks causal relationships, which is usually variations of version vector, and by consumed memory resources it depends like O(N), where N is the number of replicas.
+
+Consider automerger as an example - one of the most modern, at the time of writing the paper, JSON CRDT realisation. Automerge tighly coubled with vector clocks and version vectors. Its document tracks every update, wich have its own vector clock instance. Space complexity for document in this way will be O(N*U), where N is the number of replicas and U is the number of updates of the document. It is stated by authors of Automerge thet the perfomance degradataion begins from a hundred replicas 
+[29](https://github.com/automerge/automerge/blob/6bed9b0650e9beacdf4ea2996dcea6fb07af55b5/README.md#caveats).
 
 ## Paper Scheme.
 
