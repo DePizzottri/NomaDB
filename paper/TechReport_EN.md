@@ -59,8 +59,14 @@ The main problem facing δ-CvRDT at the moment is minimisation of possible traff
 
 Despite its universality both CRDT types are still poorly suited for _massive replicaton_, such that the number of replicas is of the order of tens or hundreds of thousands and even millions. In the case of δ-CvRDT, an important role is played by meta-information that tracks causal relationships, which is usually variations of version vector, and by consumed memory resources it depends like O(N), where N is the number of replicas.
 
-Consider automerger as an example - one of the most modern, at the time of writing the paper, JSON CRDT realisation. Automerge tighly coubled with vector clocks and version vectors. Its document tracks every update, wich have its own vector clock instance. Space complexity for document in this way will be O(N*U), where N is the number of replicas and U is the number of updates of the document. It is stated by authors of Automerge thet the perfomance degradataion begins from a hundred replicas 
+Consider _Automerge_ as an example - one of the most modern, at the time of writing the paper, JSON CRDT realisation. Automerge is tighly coubled with vector clocks and version vectors. Its document tracks every update, wich have its own vector clock instance. Space complexity for document in this way will be O(N*U), where N is the number of replicas and U is the number of updates of the document. It is stated by authors of Automerge thet the perfomance degradataion begins from a hundred replicas 
 [29](https://github.com/automerge/automerge/blob/6bed9b0650e9beacdf4ea2996dcea6fb07af55b5/README.md#caveats).
+
+Thus, finding "cheap" mechanisms for tracking of causal relationships, when it is applyed as metainformation within CRDT allows to significantly optimize the recources consumed during syncronization.
+
+This work aims to explore the possibilities and ways to reduce space overhead while tracking causal relationships while maintaining accuracy, as well as deducing practical schemes for constructing metainformation. According to known complexity[11] estimates, a certain class of models is described and analyzed.
+
+Exploring synchronizing processes in the Lamport model [[12]](https://amturing.acm.org/p558-lamport.pdf), it is possible to reduce the problem to the consideration of a certain set of parameterized configurations of synchronizing processes. Varying the parameter N responsible for the number of processes, some properties are deduced for N = 3, 4, 5, and 6.
 
 ## Paper Scheme.
 
@@ -108,7 +114,7 @@ It is minimum number of chains, on which poset P can be partitioned.
 
 The dimansion of the poset (P, →) always denoted by **dim(P)** [[15]](http://www.jstor.org/stable/2371374).
 
-**Theorem (_Hiraguti_)**:
+**Theorem (_Hiragushi_)**:
     The dimension of the poset P cant ba larger its width [16].
 
 **Critical pair** of poset elements (a, b) is an ordered pair, satisfying:
